@@ -1,0 +1,309 @@
+{
+ "forms": {
+  "avion": {
+   "poses": [
+    "avion_descente",
+    "avion_inclinaison",
+    "avion_montee",
+    "avion_touche",
+    "avion_vol-plane"
+   ],
+   "degats": [
+    "avion_brule",
+    "avion_dechire",
+    "avion_detrempe"
+   ],
+   "bbox": {
+    "degats/avion_brule": [
+     14.0,
+     38.0,
+     186.0,
+     113.7
+    ],
+    "degats/avion_dechire": [
+     1.8,
+     38.0,
+     186.0,
+     116.3
+    ],
+    "degats/avion_detrempe": [
+     14.0,
+     38.0,
+     186.0,
+     112.0
+    ],
+    "avion_descente": [
+     15.7,
+     5.3,
+     178.6,
+     111.0
+    ],
+    "avion_inclinaison": [
+     16.6,
+     51.1,
+     185.5,
+     102.7
+    ],
+    "avion_montee": [
+     20.2,
+     37.0,
+     178.6,
+     119.8
+    ],
+    "avion_touche": [
+     8.4,
+     15.4,
+     168.8,
+     120.0
+    ],
+    "avion_vol-plane": [
+     14.0,
+     20.0,
+     186.0,
+     94.0
+    ]
+   }
+  },
+  "bateau": {
+   "poses": [
+    "bateau_coule",
+    "bateau_flotte",
+    "bateau_pagaie",
+    "bateau_rempli-d-eau"
+   ],
+   "degats": [
+    "bateau_brule",
+    "bateau_dechire",
+    "bateau_detrempe"
+   ],
+   "bbox": {
+    "degats/bateau_brule": [
+     18.0,
+     22.0,
+     184.0,
+     149.0
+    ],
+    "degats/bateau_dechire": [
+     18.0,
+     22.0,
+     184.0,
+     149.0
+    ],
+    "degats/bateau_detrempe": [
+     18.0,
+     22.0,
+     184.0,
+     149.0
+    ],
+    "bateau_coule": [
+     18.0,
+     62.2,
+     184.0,
+     195.5
+    ],
+    "bateau_flotte": [
+     18.0,
+     22.1,
+     184.0,
+     148.0
+    ],
+    "bateau_pagaie": [
+     18.0,
+     20.1,
+     184.0,
+     148.0
+    ],
+    "bateau_rempli-d-eau": [
+     18.0,
+     36.6,
+     184.0,
+     170.0
+    ],
+    "calques/1_bateau": [
+     24.0,
+     22.0,
+     176.0,
+     134.0
+    ],
+    "calques/2_pagaie": [
+     78.1,
+     68.8,
+     131.0,
+     149.0
+    ],
+    "calques/3_eau": [
+     18.0,
+     126.0,
+     184.0,
+     148.0
+    ]
+   },
+   "calques": [
+    "1_bateau",
+    "2_pagaie",
+    "3_eau"
+   ]
+  },
+  "grenouille": {
+   "poses": [
+    "grenouille_aplatie",
+    "grenouille_attente",
+    "grenouille_atterrissage",
+    "grenouille_saut",
+    "grenouille_touche"
+   ],
+   "degats": [
+    "grenouille_brule",
+    "grenouille_dechire",
+    "grenouille_detrempe"
+   ],
+   "bbox": {
+    "degats/grenouille_brule": [
+     50.0,
+     66.0,
+     170.0,
+     146.6
+    ],
+    "degats/grenouille_dechire": [
+     35.7,
+     66.0,
+     170.0,
+     150.3
+    ],
+    "degats/grenouille_detrempe": [
+     50.0,
+     66.0,
+     170.0,
+     144.4
+    ],
+    "grenouille_aplatie": [
+     31.0,
+     114.8,
+     201.9,
+     144.2
+    ],
+    "grenouille_attente": [
+     50.0,
+     66.0,
+     170.0,
+     140.0
+    ],
+    "grenouille_atterrissage": [
+     40.0,
+     86.7,
+     185.2,
+     142.4
+    ],
+    "grenouille_saut": [
+     61.5,
+     19.2,
+     176.8,
+     127.0
+    ],
+    "grenouille_touche": [
+     38.3,
+     39.8,
+     158.3,
+     139.1
+    ]
+   }
+  },
+  "renard": {
+   "poses": [
+    "renard_course",
+    "renard_esquive-bas",
+    "renard_esquive-haut",
+    "renard_saut",
+    "renard_touche",
+    "renard_vent"
+   ],
+   "degats": [
+    "renard_brule",
+    "renard_dechire",
+    "renard_detrempe"
+   ],
+   "bbox": {
+    "degats/renard_brule": [
+     1.1,
+     38.0,
+     181.0,
+     140.0
+    ],
+    "degats/renard_dechire": [
+     -28.7,
+     38.0,
+     181.0,
+     140.0
+    ],
+    "degats/renard_detrempe": [
+     3.3,
+     38.0,
+     181.0,
+     140.0
+    ],
+    "renard_course": [
+     3.0,
+     37.6,
+     181.9,
+     139.1
+    ],
+    "renard_esquive-bas": [
+     -18.2,
+     97.9,
+     196.3,
+     144.5
+    ],
+    "renard_esquive-haut": [
+     27.3,
+     -2.8,
+     178.5,
+     85.9
+    ],
+    "renard_saut": [
+     0.0,
+     -3.9,
+     168.0,
+     113.6
+    ],
+    "renard_touche": [
+     17.3,
+     17.7,
+     170.4,
+     132.0
+    ],
+    "renard_vent": [
+     4.4,
+     28.6,
+     151.8,
+     143.8
+    ]
+   }
+  }
+ },
+ "cmap": {
+  "J2": {
+   "#99411d": "#1f548f",
+   "#7d3518": "#194575",
+   "#c15125": "#2769b3",
+   "#9e421e": "#205693",
+   "#f19e7c": "#7eb0e7",
+   "#c68266": "#6790bd",
+   "#ed8156": "#5999e0",
+   "#c26a47": "#497db8",
+   "#e8622c": "#2f7fd8",
+   "#be5024": "#2768b1"
+  },
+  "BOT": {
+   "#99411d": "#5c6067",
+   "#7d3518": "#4b4f54",
+   "#c15125": "#737881",
+   "#9e421e": "#5e626a",
+   "#f19e7c": "#b7bbc2",
+   "#c68266": "#96999f",
+   "#ed8156": "#a2a7b0",
+   "#c26a47": "#858990",
+   "#e8622c": "#8b919c",
+   "#be5024": "#727780"
+  }
+ }
+}
