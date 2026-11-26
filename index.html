@@ -64,6 +64,20 @@ kbd{font-family:var(--font-body);font-weight:700;font-size:11.5px;background:var
 .res td,.res th{padding:6px 8px;border-bottom:1px solid #cdbd9c;text-align:left;font-size:14px}
 .res th{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#6b4c38}
 .hint{font-size:12px;color:#6b4c38;margin-top:10px}
+.overlay>.card{margin:auto}
+.slots{display:flex;flex-wrap:wrap;gap:6px;margin:22px 0 18px}
+.slot{width:46px;height:58px;display:grid;place-items:center;position:relative;background:var(--ink);color:var(--paper);font-family:var(--font-display);font-size:36px;line-height:1;border-radius:2px}
+.slot.on{background:var(--blood);box-shadow:0 0 0 3px var(--ember)}
+.slot.on::before,.slot.on::after{position:absolute;left:0;right:0;text-align:center;font-family:var(--font-body);font-size:11px;color:var(--blood)}
+.slot.on::before{content:"▲";top:-17px}.slot.on::after{content:"▼";bottom:-17px}
+.slot.ok{width:auto;padding:0 14px;font-family:var(--font-body);font-weight:800;font-size:18px;letter-spacing:.08em}
+.slot.ok.on::before,.slot.ok.on::after{content:none}
+.bh{margin:0 0 2px;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#6b4c38}
+.res.board td,.res.board th{padding:4px 8px;font-size:13px}
+.res.board tr.me td{background:#ffde59;font-weight:800}
+.res.board tr.gap td{text-align:center;color:#6b4c38;border-bottom:0;padding:0}
+.res .empty{color:#6b4c38;font-style:italic}
+.tag{font-size:10px;font-weight:800;background:var(--ink);color:var(--paper);padding:0 5px;border-radius:2px;vertical-align:1px}
 
 /* Brief créa */
 .brief{max-width:1280px;margin:36px auto 0;display:grid;gap:28px}
@@ -94,6 +108,7 @@ kbd{font-family:var(--font-body);font-weight:700;font-size:11.5px;background:var
   <div class="tools">
     <button class="chip" id="btnDA" aria-pressed="false" title="Touche ²/`">Calques DA</button>
     <button class="chip" id="btnMute" aria-pressed="false" title="Touche M">Son coupé</button>
+    <button class="chip" id="btnScores">Scores</button>
     <button class="chip" id="btnMenu">Menu</button>
   </div>
 </div>
@@ -120,8 +135,20 @@ kbd{font-family:var(--font-body);font-weight:700;font-size:11.5px;background:var
       </div>
       <div class="row">
         <button class="btn" id="btnStart">Lancer la course</button>
-        <span class="hint">Entrée pour lancer · Échap pour pause · Manettes : boutons 1-4 = formes, haut/5/6 = saut</span>
+        <button class="btn ghost" id="btnMenuScores">Voir les scores</button>
       </div>
+      <p class="hint">Entrée pour lancer · Échap pour pause · Manettes : boutons 1-4 = formes, haut/5/6 = saut · Ton nom est demandé à la fin de chaque course.</p>
+    </div>
+  </div>
+
+  <div class="overlay" id="nameEntry" hidden>
+    <div class="card">
+      <h2 id="neTitle">JOUEUR 1</h2>
+      <p class="sub" id="neSub"></p>
+      <div class="bh">Entre ton nom</div>
+      <div class="slots" id="neSlots" aria-live="polite"></div>
+      <div class="row"><button class="btn" id="neOk">Valider</button></div>
+      <p class="hint">Clavier : tape ton nom puis Entrée. Joystick : ↑ ↓ change la lettre, ← → change de case, bouton 1 avance, bouton 2 recule, Start valide.</p>
     </div>
   </div>
 
@@ -129,7 +156,18 @@ kbd{font-family:var(--font-body);font-weight:700;font-size:11.5px;background:var
     <div class="card">
       <h2 id="resTitle">ARRIVÉE</h2>
       <table class="res"><thead><tr><th>Place</th><th>Joueur</th><th>Temps</th><th>Vies</th></tr></thead><tbody id="resBody"></tbody></table>
+      <div class="bh">Tableau des scores · top 10</div>
+      <table class="res board"><thead><tr><th>#</th><th>Nom</th><th>Temps</th><th>Vies</th><th>Mode</th></tr></thead><tbody id="boardBody"></tbody></table>
       <div class="row"><button class="btn" id="btnAgain">Rejouer</button><button class="btn ghost" id="btnBack">Menu</button></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="scores" hidden>
+    <div class="card">
+      <h2>SCORES</h2>
+      <p class="sub">Les 20 meilleures courses jouées sur cette machine. Les courses finies passent devant, classées au temps ; les autres au pourcentage de parcours. Les parties en vies infinies (∞) sont classées après.</p>
+      <table class="res board"><thead><tr><th>#</th><th>Nom</th><th>Temps</th><th>Vies</th><th>Mode</th></tr></thead><tbody id="scoresBody"></tbody></table>
+      <div class="row"><button class="btn" id="btnScoresBack">Retour</button><button class="btn ghost" id="btnClear">Effacer les scores</button></div>
     </div>
   </div>
 
@@ -333,6 +371,7 @@ function makePlayer(i,bot){return{i,bot:bot?{t:0,want:'renard',pend:null,jit:0,e
 // ---------- entrées ----------
 const keys=new Set();
 addEventListener('keydown',e=>{
+  if(S.phase==='name'){nameKey(e);return}
   if(e.code==='Escape'||e.code==='KeyP'&&S.phase==='run'&&S.players.every(p=>!p.bot||true)&&e.code==='Escape'){}
   if(e.code==='Backquote'||e.code==='IntlBackslash'){toggleDA();return}
   if(e.code==='KeyM'){setMute(!AU.muted);return}
@@ -669,7 +708,7 @@ function drawViewStatic(p){for(let v=0;v<2;v++){ctx.save();ctx.translate(0,v*(VH
 // ---------- boucle ----------
 let last=performance.now();
 function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;dt0=dt;S.t+=dt;if(S.slowT>0)S.slowT-=dt;const sdt=S.slowT>0?dt*.3:dt;
-  if(S.phase==='menu'||S.phase==='results'){if(!S.demo)S.demo={camX:300,camY:0,x:300,parts:[]};S.demo.camX+=dt*240;if(S.demo.camX>C.finish)S.demo.camX=300;drawViewStatic(S.demo);requestAnimationFrame(frame);return}
+  if(S.phase==='menu'||S.phase==='results'||S.phase==='name'){if(S.phase==='name')padName(dt);if(!S.demo)S.demo={camX:300,camY:0,x:300,parts:[]};S.demo.camX+=dt*240;if(S.demo.camX>C.finish)S.demo.camX=300;drawViewStatic(S.demo);requestAnimationFrame(frame);return}
   if(!S.paused){pollPads();
     if(S.phase==='count'){const prev=Math.ceil(S.count);S.count-=dt;const n=Math.ceil(S.count);if(n!==prev&&n>0)SFX.tick();if(S.count<=0&&prev>0){SFX.go();S.players.forEach(p=>{p.shake=.35;p.sx=.7;p.sy=1.35})}if(S.count<=-.6)S.phase='run';
       if(S.count<=0){S.players.forEach(p=>updPlayer(p,dt))}else S.players.forEach(p=>{p.in.jump=false;if(p.in.form){setForm(p,p.in.form);p.in.form=null}})}
@@ -692,11 +731,59 @@ function start(){audioInit();if(AU.ctx&&AU.ctx.state==='suspended')AU.ctx.resume
   S.infinite=$('optLives').checked;S.players=[makePlayer(0,false),makePlayer(1,S.mode===1)];S.phase='count';S.count=3;S.endT=0;S.paused=false;keys.clear();
   S.players.forEach(p=>banner(p,C.mgs[0].name,C.mgs[0].hint,3.4));AU.biome='fire';
   $('menu').hidden=true;$('results').hidden=true;$('pause').hidden=true;cv.focus&&cv.focus()}
-function showResults(){if(S.phase==='results')return;S.phase='results';AU.on=false;
-  const ps=[...S.players].sort((a,b)=>{const ra=a.state==='finished'?0:1,rb=b.state==='finished'?0:1;if(ra!==rb)return ra-rb;if(ra===0)return a.finishT-b.finishT;return b.x-a.x});
-  $('resBody').innerHTML=ps.map((p,i)=>`<tr><td>${p.state==='finished'?(i+1)+(i?'e':'er'):'—'}</td><td>${p.name}</td><td>${p.state==='finished'?fmt(p.finishT):'Déchiré à '+Math.round(p.x/C.finish*100)+' %'}</td><td>${S.infinite?'∞':p.lives}</td></tr>`).join('');
-  const w=ps[0];$('resTitle').textContent=w.state==='finished'?(w.bot?'LE BOT GAGNE':w.name+' GAGNE'):'TOUT LE MONDE EST DÉCHIRÉ';$('results').hidden=false;$('btnAgain').focus()}
-function toMenu(){S.phase='menu';AU.on=false;S.paused=false;$('results').hidden=true;$('pause').hidden=true;$('menu').hidden=false;$('btnStart').focus()}
+// ---------- scores (stockés dans le navigateur de la borne) ----------
+const SKEY='origami-scores-v1',CHARS=' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-',NLEN=8;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function loadScores(){try{const a=JSON.parse(localStorage.getItem(SKEY)||'[]');return Array.isArray(a)?a:[]}catch(e){return[]}}
+function saveScores(a){try{localStorage.setItem(SKEY,JSON.stringify(a))}catch(e){}}
+function cmpScore(a,b){if(!!a.demo!==!!b.demo)return a.demo?1:-1;if(a.finished!==b.finished)return a.finished?-1:1;if(a.finished)return a.time-b.time;return b.progress-a.progress}
+function addScore(s){const a=loadScores();a.push(s);a.sort(cmpScore);saveScores(a.slice(0,200))}
+const placeTxt=i=>(i+1)+(i?'e':'er');
+function scoreRow(s,i,hl){return `<tr${hl.includes(s.id)?' class="me"':''}><td>${i+1}</td><td>${esc(s.name)}${s.demo?' <span class="tag">∞</span>':''}</td><td>${s.finished?fmt(s.time):'Déchiré · '+Math.round(s.progress*100)+' %'}</td><td>${s.demo?'∞':s.lives}</td><td>${s.mode===2?'2 joueurs':'vs BOT'}</td></tr>`}
+function boardRows(hl,limit){const a=loadScores();if(!a.length)return '<tr><td colspan="5" class="empty">Aucun score pour l’instant. Termine une course pour inscrire le premier nom.</td></tr>';
+  let h=a.slice(0,limit).map((s,i)=>scoreRow(s,i,hl)).join('');
+  a.forEach((s,i)=>{if(i>=limit&&hl.includes(s.id))h+='<tr class="gap"><td colspan="5">⋯</td></tr>'+scoreRow(s,i,hl)});return h}
+const NE={q:[],cur:null,chars:[],pos:0,ids:[],ps:[],rep:{}};
+function showResults(){if(S.phase==='results'||S.phase==='name')return;AU.on=false;
+  NE.ps=[...S.players].sort((a,b)=>{const ra=a.state==='finished'?0:1,rb=b.state==='finished'?0:1;if(ra!==rb)return ra-rb;if(ra===0)return a.finishT-b.finishT;return b.x-a.x});
+  NE.ids=[];NE.q=S.players.filter(p=>!p.bot);S.phase='name';nextName()}
+function nextName(){const p=NE.q.shift();if(!p){$('nameEntry').hidden=true;renderResults();return}
+  NE.cur=p;const last=(LS.get('origami-name-'+p.i)||'').toUpperCase();
+  NE.chars=Array.from({length:NLEN},(_,k)=>CHARS.includes(last[k]||' ')?(last[k]||' '):' ');
+  if(!last.trim()){NE.chars[0]='A';NE.pos=0}else NE.pos=NLEN;
+  NE.rep={u:1e9,d:1e9,l:1e9,r:1e9,a:1e9,b:1e9,s:1e9};
+  const i=NE.ps.indexOf(p);$('neTitle').textContent=p.name;
+  $('neSub').textContent=p.state==='finished'?placeTxt(i)+' · '+fmt(p.finishT)+(S.infinite?' · vies infinies':''):'Déchiré à '+Math.round(clamp(p.x/C.finish,0,1)*100)+' % du parcours';
+  renderSlots();$('results').hidden=true;$('nameEntry').hidden=false;$('neOk').blur()}
+function renderSlots(){$('neSlots').innerHTML=NE.chars.map((c,k)=>`<span class="slot${k===NE.pos?' on':''}">${c===' '?'&nbsp;':esc(c)}</span>`).join('')+`<span class="slot ok${NE.pos===NLEN?' on':''}">OK</span>`}
+function neCycle(d){if(NE.pos>=NLEN)return;const i=CHARS.indexOf(NE.chars[NE.pos]);NE.chars[NE.pos]=CHARS[(i+d+CHARS.length)%CHARS.length];SFX.tick();renderSlots()}
+function neMove(d){NE.pos=clamp(NE.pos+d,0,NLEN);renderSlots()}
+function neType(c){if(NE.pos>=NLEN)NE.pos=NLEN-1;NE.chars[NE.pos]=c;NE.pos=Math.min(NE.pos+1,NLEN);SFX.tick();renderSlots()}
+function neBack(){if(NE.pos>=NLEN||(NE.pos>0&&NE.chars[NE.pos]===' '))NE.pos--;NE.chars[NE.pos]=' ';renderSlots()}
+function neConfirm(){const p=NE.cur;if(!p)return;let name=NE.chars.join('').trim().replace(/\s+/g,' ');if(!name)name=p.name;LS.set('origami-name-'+p.i,name);
+  const s={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,finished:p.state==='finished',time:p.state==='finished'?+p.finishT.toFixed(2):null,
+    progress:+clamp(p.x/C.finish,0,1).toFixed(3),lives:p.lives,mode:S.mode,demo:S.infinite,date:new Date().toISOString().slice(0,10)};
+  addScore(s);NE.ids.push(s.id);p.entry=name;SFX.check(2);NE.cur=null;nextName()}
+function nameKey(e){const c=e.code,k=e.key;
+  if(c==='ArrowUp'){e.preventDefault();neCycle(1)}else if(c==='ArrowDown'){e.preventDefault();neCycle(-1)}
+  else if(c==='ArrowLeft'){e.preventDefault();neMove(-1)}else if(c==='ArrowRight'){e.preventDefault();neMove(1)}
+  else if(c==='Enter'||c==='NumpadEnter'){e.preventDefault();if(!e.repeat)neConfirm()}
+  else if(c==='Backspace'){e.preventDefault();neBack()}
+  else if(k&&k.length===1&&!e.ctrlKey&&!e.metaKey&&!e.altKey){const u=k.toUpperCase();if(CHARS.includes(u)){e.preventDefault();neType(u)}}}
+function padName(dt){if(!NE.cur||!navigator.getGamepads)return;const gp=[...navigator.getGamepads()].filter(Boolean)[NE.cur.i];if(!gp)return;
+  const B=n=>!!(gp.buttons[n]&&gp.buttons[n].pressed),ax=n=>gp.axes[n]||0;
+  const st={u:ax(1)<-.5||B(12),d:ax(1)>.5||B(13),l:ax(0)<-.5||B(14),r:ax(0)>.5||B(15),a:B(0),b:B(1),s:B(9)};
+  const fire={u:()=>neCycle(1),d:()=>neCycle(-1),l:()=>neMove(-1),r:()=>neMove(1),a:()=>NE.pos>=NLEN?neConfirm():neMove(1),b:()=>neMove(-1),s:neConfirm};
+  for(const key in st){const dir='udlr'.includes(key);if(!st[key]){NE.rep[key]=-1;continue}
+    if(NE.rep[key]<0){NE.rep[key]=dir?.35:1e9;fire[key]()}else if(dir){NE.rep[key]-=dt;if(NE.rep[key]<=0){NE.rep[key]=.11;fire[key]()}}}}
+function renderResults(){S.phase='results';const ps=NE.ps;
+  $('resBody').innerHTML=ps.map((p,i)=>`<tr><td>${p.state==='finished'?placeTxt(i):'—'}</td><td>${esc(p.entry||p.name)}</td><td>${p.state==='finished'?fmt(p.finishT):'Déchiré à '+Math.round(clamp(p.x/C.finish,0,1)*100)+' %'}</td><td>${S.infinite?'∞':p.lives}</td></tr>`).join('');
+  const w=ps[0];$('resTitle').textContent=w.state==='finished'?(w.bot?'LE BOT GAGNE':(w.entry||w.name)+' GAGNE'):'TOUT LE MONDE EST DÉCHIRÉ';
+  $('boardBody').innerHTML=boardRows(NE.ids,10);$('results').hidden=false;$('btnAgain').focus()}
+function openScores(){if((S.phase==='run'||S.phase==='count')&&!S.paused)togglePause();$('scoresBody').innerHTML=boardRows([],20);clearArm(false);$('scores').hidden=false;$('btnScoresBack').focus()}
+function closeScores(){$('scores').hidden=true}
+let clearT=0;function clearArm(on){clearTimeout(clearT);$('btnClear').dataset.armed=on?'1':'';$('btnClear').textContent=on?'Confirmer l’effacement':'Effacer les scores';if(on)clearT=setTimeout(()=>clearArm(false),4000)}
+function toMenu(){S.phase='menu';AU.on=false;S.paused=false;NE.cur=null;NE.q=[];['results','pause','nameEntry','scores'].forEach(id=>$(id).hidden=true);$('menu').hidden=false;$('btnStart').focus()}
 function togglePause(){S.paused=!S.paused;$('pause').hidden=!S.paused;AU.on=!S.paused;if(S.paused)$('btnResume').focus()}
 function toggleDA(force){S.da=typeof force==='boolean'?force:!S.da;$('btnDA').setAttribute('aria-pressed',String(S.da));$('optDA').checked=S.da;LS.set('origami-da',S.da?'1':'0')}
 function setMode(m){S.mode=m;$('m1').setAttribute('aria-pressed',String(m===1));$('m2').setAttribute('aria-pressed',String(m===2))}
@@ -704,9 +791,11 @@ $('m1').onclick=()=>setMode(1);$('m2').onclick=()=>setMode(2);
 $('btnStart').onclick=start;$('btnAgain').onclick=start;$('btnBack').onclick=toMenu;$('btnQuit').onclick=toMenu;$('btnResume').onclick=togglePause;
 $('btnMenu').onclick=toMenu;$('btnDA').onclick=()=>toggleDA();$('optDA').onchange=e=>toggleDA(e.target.checked);
 $('btnMute').onclick=()=>{audioInit();setMute(!AU.muted)};
+$('neOk').onclick=neConfirm;$('btnScores').onclick=openScores;$('btnMenuScores').onclick=openScores;$('btnScoresBack').onclick=closeScores;
+$('btnClear').onclick=()=>{if($('btnClear').dataset.armed){saveScores([]);$('scoresBody').innerHTML=boardRows([],20);clearArm(false)}else clearArm(true)};
 setMute(AU.muted);toggleDA(LS.get('origami-da')==='1');
 S.players=[makePlayer(0,false),makePlayer(1,true)];
-window.__origami={S,C,makePlayer,updPlayer,start};
+window.__origami={S,C,makePlayer,updPlayer,start,showResults};
 requestAnimationFrame(frame);
 })();
 </script>
