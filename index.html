@@ -66,7 +66,8 @@ kbd{font-family:var(--font-body);font-weight:700;font-size:11.5px;background:var
 .hint{font-size:12px;color:#6b4c38;margin-top:10px}
 .overlay>.card{margin:auto}
 .slots{display:flex;flex-wrap:wrap;gap:6px;margin:22px 0 18px}
-.slot{width:46px;height:58px;display:grid;place-items:center;position:relative;background:var(--ink);color:var(--paper);font-family:var(--font-display);font-size:36px;line-height:1;border-radius:2px}
+.slot{width:68px;height:84px;display:grid;place-items:center;position:relative;background:var(--ink);color:var(--paper);font-family:var(--font-display);font-size:56px;line-height:1;border-radius:2px}
+.slots{gap:10px}
 .slot.on{background:var(--blood);box-shadow:0 0 0 3px var(--ember)}
 .slot.on::before,.slot.on::after{position:absolute;left:0;right:0;text-align:center;font-family:var(--font-body);font-size:11px;color:var(--blood)}
 .slot.on::before{content:"▲";top:-17px}.slot.on::after{content:"▼";bottom:-17px}
@@ -137,7 +138,7 @@ kbd{font-family:var(--font-body);font-weight:700;font-size:11.5px;background:var
         <button class="btn" id="btnStart">Lancer la course</button>
         <button class="btn ghost" id="btnMenuScores">Voir les scores</button>
       </div>
-      <p class="hint">Entrée pour lancer · Échap pour pause · Manettes : boutons 1-4 = formes, haut/5/6 = saut · Ton nom est demandé à la fin de chaque course.</p>
+      <p class="hint">Entrée pour lancer · Échap pour pause · Manettes : boutons 1-4 = formes, haut/5/6 = saut · Tes initiales (3 lettres) sont demandées à la fin de chaque course.</p>
     </div>
   </div>
 
@@ -145,10 +146,10 @@ kbd{font-family:var(--font-body);font-weight:700;font-size:11.5px;background:var
     <div class="card">
       <h2 id="neTitle">JOUEUR 1</h2>
       <p class="sub" id="neSub"></p>
-      <div class="bh">Entre ton nom</div>
+      <div class="bh">Entre tes initiales · 3 lettres</div>
       <div class="slots" id="neSlots" aria-live="polite"></div>
       <div class="row"><button class="btn" id="neOk">Valider</button></div>
-      <p class="hint">Clavier : tape ton nom puis Entrée. Joystick : ↑ ↓ change la lettre, ← → change de case, bouton 1 avance, bouton 2 recule, Start valide.</p>
+      <p class="hint">Clavier : tape tes 3 lettres puis Entrée. Joystick : ↑ ↓ change la lettre, ← → change de case, bouton 1 avance, bouton 2 recule, Start valide.</p>
     </div>
   </div>
 
@@ -732,7 +733,7 @@ function start(){audioInit();if(AU.ctx&&AU.ctx.state==='suspended')AU.ctx.resume
   S.players.forEach(p=>banner(p,C.mgs[0].name,C.mgs[0].hint,3.4));AU.biome='fire';
   $('menu').hidden=true;$('results').hidden=true;$('pause').hidden=true;cv.focus&&cv.focus()}
 // ---------- scores (stockés dans le navigateur de la borne) ----------
-const SKEY='origami-scores-v1',CHARS=' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-',NLEN=8;
+const SKEY='origami-scores-v1',CHARS='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-',NLEN=3;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function loadScores(){try{const a=JSON.parse(localStorage.getItem(SKEY)||'[]');return Array.isArray(a)?a:[]}catch(e){return[]}}
 function saveScores(a){try{localStorage.setItem(SKEY,JSON.stringify(a))}catch(e){}}
@@ -750,17 +751,17 @@ function showResults(){if(S.phase==='results'||S.phase==='name')return;AU.on=fal
 function nextName(){const p=NE.q.shift();if(!p){$('nameEntry').hidden=true;renderResults();return}
   NE.cur=p;const last=(LS.get('origami-name-'+p.i)||'').toUpperCase();
   NE.chars=Array.from({length:NLEN},(_,k)=>CHARS.includes(last[k]||' ')?(last[k]||' '):' ');
-  if(!last.trim()){NE.chars[0]='A';NE.pos=0}else NE.pos=NLEN;
+  if(!last.trim()){NE.chars.fill('A');NE.pos=0}else NE.pos=NLEN;NE.fresh=true;
   NE.rep={u:1e9,d:1e9,l:1e9,r:1e9,a:1e9,b:1e9,s:1e9};
   const i=NE.ps.indexOf(p);$('neTitle').textContent=p.name;
   $('neSub').textContent=p.state==='finished'?placeTxt(i)+' · '+fmt(p.finishT)+(S.infinite?' · vies infinies':''):'Déchiré à '+Math.round(clamp(p.x/C.finish,0,1)*100)+' % du parcours';
   renderSlots();$('results').hidden=true;$('nameEntry').hidden=false;$('neOk').blur()}
 function renderSlots(){$('neSlots').innerHTML=NE.chars.map((c,k)=>`<span class="slot${k===NE.pos?' on':''}">${c===' '?'&nbsp;':esc(c)}</span>`).join('')+`<span class="slot ok${NE.pos===NLEN?' on':''}">OK</span>`}
-function neCycle(d){if(NE.pos>=NLEN)return;const i=CHARS.indexOf(NE.chars[NE.pos]);NE.chars[NE.pos]=CHARS[(i+d+CHARS.length)%CHARS.length];SFX.tick();renderSlots()}
-function neMove(d){NE.pos=clamp(NE.pos+d,0,NLEN);renderSlots()}
-function neType(c){if(NE.pos>=NLEN)NE.pos=NLEN-1;NE.chars[NE.pos]=c;NE.pos=Math.min(NE.pos+1,NLEN);SFX.tick();renderSlots()}
-function neBack(){if(NE.pos>=NLEN||(NE.pos>0&&NE.chars[NE.pos]===' '))NE.pos--;NE.chars[NE.pos]=' ';renderSlots()}
-function neConfirm(){const p=NE.cur;if(!p)return;let name=NE.chars.join('').trim().replace(/\s+/g,' ');if(!name)name=p.name;LS.set('origami-name-'+p.i,name);
+function neCycle(d){NE.fresh=false;if(NE.pos>=NLEN)return;const i=CHARS.indexOf(NE.chars[NE.pos]);NE.chars[NE.pos]=CHARS[(i+d+CHARS.length)%CHARS.length];SFX.tick();renderSlots()}
+function neMove(d){NE.fresh=false;NE.pos=clamp(NE.pos+d,0,NLEN);renderSlots()}
+function neType(c){if(NE.fresh){NE.chars.fill(' ');NE.pos=0;NE.fresh=false}if(NE.pos>=NLEN)return;NE.chars[NE.pos]=c;NE.pos=Math.min(NE.pos+1,NLEN);SFX.tick();renderSlots()}
+function neBack(){NE.fresh=false;if(NE.pos>=NLEN||(NE.pos>0&&NE.chars[NE.pos]===' '))NE.pos--;NE.chars[NE.pos]=' ';renderSlots()}
+function neConfirm(){const p=NE.cur;if(!p)return;let name=NE.chars.join('').trim().replace(/\s+/g,' ');if(!name)name='J'+(p.i+1);LS.set('origami-name-'+p.i,name);
   const s={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,finished:p.state==='finished',time:p.state==='finished'?+p.finishT.toFixed(2):null,
     progress:+clamp(p.x/C.finish,0,1).toFixed(3),lives:p.lives,mode:S.mode,demo:S.infinite,date:new Date().toISOString().slice(0,10)};
   addScore(s);NE.ids.push(s.id);p.entry=name;SFX.check(2);NE.cur=null;nextName()}
