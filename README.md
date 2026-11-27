@@ -15,6 +15,7 @@ Ouvre `index.html` dans un navigateur, ou la version en ligne (GitHub Pages).
 - `Échap` : pause · `M` : son · `²` : calques DA (noms des calques, parallaxe, hitboxes)
 - Manettes : boutons 1-4 = formes, gâchettes = action, stick ou croix = joystick
 - Mode 1 joueur contre un bot, ou 2 joueurs en écran scindé
+- Qualité graphique (menu) : Auto baisse la résolution si l'affichage ralentit ; Économe pour une borne sans carte graphique
 
 ## Déroulement
 
@@ -22,13 +23,13 @@ L'ordre des trois biomes est tiré au hasard à chaque partie. Chaque biome ench
 
 | Biome | Épreuve | Forme | Commande |
 |---|---|---|---|
-| Volcan | Gouffre de lave | Avion | maintenir l'action pour monter, la fumée chaude porte et recharge le souffle |
-| Volcan | Rivière de lave | Grenouille | action en rythme, les 4 pierres s'enfoncent |
-| Volcan | Pluie de feu | Renard | joystick haut / bas pour changer de couloir |
+| Volcan | Gouffre de lave | Avion | le sol s'effondre ; maintenir l'action pour monter (l'air chaud porte et recharge le souffle), passer au-dessus des jets et sous les coulées |
+| Volcan | Rivière de lave | Grenouille | action en rythme, les 4 pierres s'enfoncent de plus en plus vite |
+| Volcan | Pluie de feu | Renard | boules de feu en continu, impacts annoncés ; joystick haut / bas pour changer de couloir |
 | Tsunami | Tourbillon | Bateau | marteler l'action pour pagayer |
-| Tsunami | Nénuphars | Grenouille | joystick pour viser un nénuphar sec, action pour sauter |
+| Tsunami | Nénuphars | Grenouille | joystick pour viser un nénuphar sec, action pour sauter (on peut ressauter d'un nénuphar qui coule) |
 | Tsunami | Paquets de mer | Bateau | secouer le joystick gauche / droite pour écoper |
-| Tornade | Couloir de vent | Avion | joystick haut / bas, les anneaux rechargent le souffle |
+| Tornade | Couloir de vent | Avion | joystick haut / bas (ou action maintenue pour monter), les anneaux rechargent le souffle |
 | Tornade | Crête étroite | Renard | marteler l'action pendant les rafales |
 | Tornade | Débris rasants | Grenouille | maintenir pour s'aplatir, relâcher pour sauter |
 
