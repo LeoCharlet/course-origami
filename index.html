@@ -808,6 +808,57 @@ function drawSlab(p,x0,x1,gy,bm,s0,lanes){const top=lanes?gy-LDY-14:gy;
     ctx.strokeStyle='rgba(0,0,0,.12)';ctx.lineWidth=2;ctx.setLineDash([14,10]);for(const l of [.5,1.5]){const yy=gy+laneY(l)+4;ctx.beginPath();ctx.moveTo(x0,yy);ctx.lineTo(x1,yy);ctx.stroke()}ctx.setLineDash([])}
   else{ctx.fillStyle=bm.groundTop;ctx.beginPath();ctx.moveTo(x0,gy+16);tornTop(x0,x1,gy,5,s0);ctx.lineTo(x1,gy+16);ctx.lineTo(x1,gy+20);ctx.lineTo(x0,gy+22);ctx.fill()}
   ctx.fillStyle=bm.groundEdge;ctx.fillRect(x0,top+14,3,VH);ctx.fillRect(x1-3,top+14,3,VH)}
+// ---------- feu : flammes, boules de feu, air chaud et coulée de lave, dessinés une seule fois puis réutilisés (rapide sans carte graphique)
+let FA=null;const FL_W=64,FL_H=112,FL_N=8;
+function fireArt(){if(FA)return FA;const mkc=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};
+  // flammes : 8 images d'une langue de feu qui ondule (rouge, orange, jaune)
+  const fl=mkc(FL_W*FL_N,FL_H),g=fl.getContext('2d');
+  const tongue=(cx,base,bw,H,sw)=>{g.beginPath();g.moveTo(cx-bw/2,base);g.bezierCurveTo(cx-bw*.62,base-H*.42,cx+sw*.3-bw*.28,base-H*.74,cx+sw,base-H);
+    g.bezierCurveTo(cx+sw*.3+bw*.32,base-H*.7,cx+bw*.62,base-H*.38,cx+bw/2,base);g.quadraticCurveTo(cx,base+bw*.28,cx-bw/2,base);g.fill()};
+  for(let f=0;f<FL_N;f++){const a=f/FL_N*Math.PI*2,cx=f*FL_W+FL_W/2,base=FL_H-14,sw=Math.sin(a)*10,st=1+Math.sin(a*2)*.07;
+    const gr=g.createLinearGradient(0,base,0,base-FL_H);gr.addColorStop(0,'#c8301a');gr.addColorStop(1,'#ff6a2a');g.fillStyle=gr;tongue(cx,base,FL_W*.84,(FL_H-18)*st,sw);
+    g.fillStyle='#ff7a24';tongue(cx-12+Math.sin(a+1)*2,base,FL_W*.36,FL_H*.5*(1+Math.sin(a+2)*.15),sw*.6-6);tongue(cx+12,base,FL_W*.34,FL_H*.42*(1+Math.cos(a)*.15),sw*.6+5);
+    g.fillStyle='#ff9a2e';tongue(cx,base,FL_W*.58,(FL_H-18)*.68*st,sw*.75);
+    g.fillStyle='#ffd25a';tongue(cx,base,FL_W*.32,(FL_H-18)*.4*st,sw*.45);g.fillStyle='#fff1b8';tongue(cx,base+2,FL_W*.14,(FL_H-18)*.18,sw*.3)}
+  // boule de feu avec sa traînée (la boule à gauche, la traînée vers la droite)
+  const fb=mkc(170,64),b=fb.getContext('2d');let gr=b.createLinearGradient(30,0,168,0);gr.addColorStop(0,'rgba(255,120,40,.95)');gr.addColorStop(1,'rgba(255,70,20,0)');
+  b.fillStyle=gr;b.beginPath();b.moveTo(30,12);b.quadraticCurveTo(100,20,168,32);b.quadraticCurveTo(100,44,30,52);b.fill();
+  gr=b.createLinearGradient(30,0,120,0);gr.addColorStop(0,'rgba(255,214,100,.95)');gr.addColorStop(1,'rgba(255,170,60,0)');b.fillStyle=gr;b.beginPath();b.moveTo(30,22);b.quadraticCurveTo(80,27,120,32);b.quadraticCurveTo(80,37,30,42);b.fill();
+  gr=b.createRadialGradient(28,30,2,32,32,22);gr.addColorStop(0,'#fff3c0');gr.addColorStop(.35,'#ffc04a');gr.addColorStop(.75,'#ff6a24');gr.addColorStop(1,'rgba(200,40,20,0)');b.fillStyle=gr;b.beginPath();b.arc(32,32,22,0,7);b.fill();
+  // colonne d'air chaud : voile doux, plus dense au centre, qui s'efface en haut
+  const hc=mkc(64,128),h=hc.getContext('2d');gr=h.createLinearGradient(0,0,64,0);gr.addColorStop(0,'rgba(255,170,90,0)');gr.addColorStop(.5,'rgba(255,190,110,.26)');gr.addColorStop(1,'rgba(255,170,90,0)');h.fillStyle=gr;h.fillRect(0,0,64,128);
+  h.globalCompositeOperation='destination-in';gr=h.createLinearGradient(0,0,0,128);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(.3,'#000');gr.addColorStop(1,'#000');h.fillStyle=gr;h.fillRect(0,0,64,128);
+  // coulée qui tombe d'en haut : cœur clair, bords sombres, goutte arrondie en bas
+  const cl=mkc(64,256),k=cl.getContext('2d');let lg=k.createLinearGradient(0,0,64,0);[[0,'#8e1f14'],[.22,'#d9481a'],[.45,'#ffa23a'],[.52,'#ffe08a'],[.6,'#ffa23a'],[.8,'#d9481a'],[1,'#8e1f14']].forEach(q=>lg.addColorStop(q[0],q[1]));
+  k.fillStyle=lg;k.beginPath();k.moveTo(0,0);k.lineTo(0,212);k.bezierCurveTo(0,250,20,256,32,256);k.bezierCurveTo(44,256,64,250,64,212);k.lineTo(64,0);k.fill();
+  // croûte de lave (motif qui se répète) : plaques sombres, fissures incandescentes entre elles
+  const T=256,N=8,cs=T/N,cr=mkc(T,T),c=cr.getContext('2d');c.fillStyle='#ff7424';c.fillRect(0,0,T,T);
+  const P=(i,j)=>{const a=((i%N)+N)%N,bb=((j%N)+N)%N;return [i*cs+(hash(a*7+bb,11)-.5)*cs*.75,j*cs+(hash(a*7+bb,23)-.5)*cs*.75]};
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){const q=[P(i,j),P(i+1,j),P(i+1,j+1),P(i,j+1)],mx=q.reduce((s,v)=>s+v[0],0)/4,my=q.reduce((s,v)=>s+v[1],0)/4,sh=[];q.forEach((v,n)=>{const w=q[(n+1)%4],u=hash(i*13+j*7+n,41);sh.push([mx+(v[0]-mx)*.9,my+(v[1]-my)*.9],[mx+((v[0]+w[0])/2+(u-.5)*cs*.3-mx)*.9,my+((v[1]+w[1])/2+(hash(n,i*3+j)-.5)*cs*.3-my)*.9])});
+    const col=['rgba(59,20,16,.92)','rgba(74,25,18,.9)','rgba(92,32,16,.88)','rgba(51,17,13,.94)'][Math.floor(hash(i*5+j,31)*4)];
+    for(const ox of [0,-T,T])for(const oy of [0,-T,T]){c.fillStyle='#ffb347';c.beginPath();sh.forEach((v,n)=>n?c.lineTo(v[0]+ox,v[1]+oy):c.moveTo(v[0]+ox,v[1]+oy));c.closePath();c.fill();
+      c.save();c.translate(ox+mx,oy+my);c.scale(.91,.91);c.translate(-mx,-my);c.fillStyle=col;c.beginPath();sh.forEach((v,n)=>n?c.lineTo(v[0],v[1]):c.moveTo(v[0],v[1]));c.closePath();c.fill();
+      c.fillStyle='rgba(255,140,60,.18)';c.beginPath();c.arc(mx+(hash(i,j)-.5)*14,my+(hash(j,i)-.5)*14,5,0,7);c.fill();c.restore()}}
+  FA={fl,fb,hc,cl,crust:ctx.createPattern(cr,'repeat')};return FA}
+// flamme posée au sol en (x, base), largeur w, hauteur h ; ph décale l'animation
+function flame(x,base,w,h,ph){const A=fireArt(),f=(((S.t*12+ph*5)|0)%FL_N+FL_N)%FL_N;ctx.drawImage(A.fl,f*FL_W,0,FL_W,FL_H,Math.round(x-w/2),Math.round(base-h*(FL_H-14)/FL_H),Math.round(w),Math.round(h))}
+// la menace du volcan : une coulée de lave épaisse qui roule vers le joueur
+function drawLavaFlow(p,tx,gy){const A=fireArt(),t=S.t,H0=Math.min(150,gy-30),nx=tx+Math.sin(t*3)*4;
+  const pts=[];for(let x=-20;x<tx-46;x+=22){const u=clamp((tx-x)/420,0,1);pts.push([x,gy-60-H0*.55*u-Math.sin(x*.045+t*2.2)*7-Math.sin(x*.11-t*3.1)*4])}
+  const edge=open=>{pts.forEach((q,n)=>n||!open?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));if(!pts.length&&open)ctx.moveTo(-20,gy-70);
+    ctx.bezierCurveTo(tx-20,gy-72+Math.sin(t*2.6)*4,nx+18,gy-58,nx+16,gy-24);ctx.quadraticCurveTo(nx+14,gy+2,nx-6,gy+6)};
+  const path=()=>{ctx.beginPath();ctx.moveTo(-20,VH);ctx.lineTo(-20,pts.length?pts[0][1]:gy-70);edge();ctx.lineTo(nx-6,VH);ctx.closePath()};
+  // halo de chaleur devant la coulée
+  ctx.fillStyle='rgba(255,120,40,.22)';ctx.beginPath();ctx.ellipse(tx+10,gy+2,90,16,0,0,7);ctx.fill();
+  // corps : croûte qui défile lentement, bord incandescent
+  ctx.fillStyle='#ff8a2a';ctx.save();ctx.translate(6,-6);path();ctx.fill();ctx.restore();
+  path();const off=((sx(p,p.tx*.65))%256+256)%256;A.crust.setTransform(new DOMMatrix([1,0,0,1,Math.round(off),Math.round(gy)]));ctx.fillStyle=A.crust;ctx.fill();
+  ctx.lineJoin='round';ctx.beginPath();edge(true);ctx.strokeStyle='#e5481a';ctx.lineWidth=16;ctx.stroke();ctx.strokeStyle='#ff9a2e';ctx.lineWidth=9;ctx.stroke();ctx.strokeStyle='#ffe08a';ctx.lineWidth=3;ctx.stroke();
+  // flammes et bulles sur le dessus, fumée au-dessus
+  if(!Q.lite){for(let k=0;k<4;k++){const q=pts[Math.max(0,pts.length-2-k*3)];if(!q)break;flame(q[0],q[1]+10,34+k*4,48+k*6,k*1.7)}
+    for(let k=0;k<3;k++){const ph=(t*.9+k*.37)%1,q=pts[Math.max(0,pts.length-3-k*4)];if(!q)break;ctx.globalAlpha=1-ph;ctx.fillStyle='#ffd25a';ctx.beginPath();ctx.arc(q[0]+8,q[1]-2-ph*10,3+ph*7,0,7);ctx.fill()}
+    for(let k=0;k<4;k++){const ph=(t*.35+k*.25)%1,x=tx-40-k*60+Math.sin(t+k)*10;ctx.globalAlpha=.32*(1-ph);ctx.fillStyle='#3a2420';ctx.beginPath();ctx.arc(x,gy-H0-20-ph*110,22+ph*26,0,7);ctx.fill()}ctx.globalAlpha=1}
+  else flame(tx-30,gy-58,40,56,0)}
 function drawLava(p,x0,x1,gy){for(let l=0;l<3;l++){ctx.fillStyle=['#7a1508','#d43b12','#ff8a2a'][l];ctx.beginPath();ctx.moveTo(x0,VH);const yy=gy+30-l*7;for(let x=x0;x<=x1;x+=12)ctx.lineTo(x,yy+Math.sin((x+p.camX)*.04+S.t*(3+l)+l)*5);ctx.lineTo(x1,VH);ctx.fill()}}
 function drawWater(p,x0,x1,gy,rough){for(let l=0;l<3;l++){ctx.fillStyle=['#0e417e','#0b59a6','#2a93d1'][l];ctx.beginPath();ctx.moveTo(x0,VH);const yy=gy+22-l*8;const a=rough?8:4;for(let x=x0;x<=x1;x+=14)ctx.lineTo(x,yy+Math.sin((x+p.camX)*.03+S.t*(2+l*.7)*(rough?2:1)+l*2)*a);ctx.lineTo(x1,VH);ctx.fill()}
   ctx.strokeStyle='rgba(232,246,253,.85)';ctx.lineWidth=2;ctx.beginPath();for(let x=x0;x<=x1;x+=14)ctx.lineTo(x,gy+6+Math.sin((x+p.camX)*.03+S.t*3.4+4)*4);ctx.stroke();
@@ -852,19 +903,18 @@ const MGDRAW={
         if(st&&st.trig){ctx.fillStyle='#1a0806';ctx.fillRect(TW/2-1,4,1.5,th)}ctx.restore()}
       // colonnes de fumée chaude
       for(const c of d.cols){const x=sx(p,D.colX(c));if(x<-100||x>W+100)continue;
-        ctx.fillStyle='rgba(255,150,70,.16)';ctx.fillRect(x-c.w/2,top,c.w,gy+20-top);
+        ctx.drawImage(fireArt().hc,0,0,64,128,Math.round(x-c.w*.7),top,Math.round(c.w*1.4),gy+20-top);
         for(let k=0;k<5;k++){const ph=(S.t*110+k*70)%(gy+40-top),r=14+ph*.07;ctx.fillStyle=k&1?'rgba(210,200,190,.32)':'rgba(170,160,150,.28)';ctx.beginPath();ctx.arc(x+Math.sin(S.t*2+k+c.ph)*16,gy+20-ph,r,0,7);ctx.fill()}
-        ctx.strokeStyle='rgba(255,230,190,.55)';ctx.lineWidth=2;for(let k=0;k<3;k++){const yy=gy-((S.t*170+k*90)%(gy-top));ctx.beginPath();ctx.moveTo(x-10+k*10,yy+16);ctx.lineTo(x-10+k*10,yy);ctx.stroke()}}
+        ctx.fillStyle='#ffd27a';for(let k=0;k<4;k++){const yy=gy-((S.t*150+k*67)%(gy-top)),xx=x-c.w*.3+hash(k,c.ph)*c.w*.6+Math.sin(S.t*3+k)*6;ctx.globalAlpha=.75*(1-(gy-yy)/(gy-top));ctx.beginPath();ctx.arc(xx,yy,2.5,0,7);ctx.fill()}ctx.globalAlpha=1}
       // éruptions : jets qui montent de la lave, coulées qui tombent d'en haut
       for(const o of d.obs){const x=sx(p,o.x);if(x<-80||x>W+80)continue;
         if(o.k==='jet'){const s=D.jet(o);
           if(s.s==='warn'){ctx.fillStyle='#ffc04a';for(let k=0;k<4;k++){ctx.beginPath();ctx.arc(x-15+k*10,gy+20-((S.t*40+k*5)%8),4,0,7);ctx.fill()}
-            ctx.strokeStyle='rgba(255,180,60,.6)';ctx.setLineDash([6,6]);ctx.beginPath();ctx.moveTo(x,gy+20);ctx.lineTo(x,gy-o.h);ctx.stroke();ctx.setLineDash([])}
-          else if(s.s==='on'){const hh=o.h*Math.min(1,s.k*5)*(s.k>.85?(1-s.k)/.15:1);for(let l=0;l<3;l++){ctx.fillStyle=['#b8321a','#e5641e','#ffc04a'][l];const w=o.w*(1-l*.28);ctx.beginPath();ctx.moveTo(x-w/2,gy+24);
-              for(let q=0;q<=6;q++){const t=q/6;ctx.lineTo(x-w/2+w*t*.5+Math.sin(S.t*18+q+l)*3,gy+24-(hh+24-l*12)*t)}for(let q=6;q>=0;q--){const t=q/6;ctx.lineTo(x+w/2-w*t*.5+Math.sin(S.t*16+q*2+l)*3,gy+24-(hh+24-l*12)*t)}ctx.fill()}}}
+            ctx.globalAlpha=.18+.1*Math.sin(S.t*12);flame(x,gy+22,o.w*1.6,o.h+24,o.ph);ctx.globalAlpha=1}
+          else if(s.s==='on'){const hh=o.h*Math.min(1,s.k*5)*(s.k>.85?(1-s.k)/.15:1);if(hh>2){flame(x,gy+22,o.w*1.6,hh+24,o.ph);flame(x-o.w*.35,gy+22,o.w*.9,(hh+24)*.55,o.ph+3);flame(x+o.w*.35,gy+22,o.w*.9,(hh+24)*.6,o.ph+5)}}}
         else{const yb=gy-o.yb;ctx.fillStyle='#2a0907';poly([[x-o.w/2-16,top],[x+o.w/2+16,top],[x+o.w/2,top+24],[x-o.w/2,top+24]]);
-          for(let l=0;l<3;l++){ctx.fillStyle=['#b8321a','#e5641e','#ffc04a'][l];const w=o.w*(1-l*.3);ctx.beginPath();ctx.moveTo(x-w/2,top);
-            for(let yy=top;yy<=yb;yy+=16)ctx.lineTo(x-w/2+Math.sin(yy*.08+S.t*8+l)*4,yy);ctx.lineTo(x,yb+10+Math.sin(S.t*6)*4);for(let yy=yb;yy>=top;yy-=16)ctx.lineTo(x+w/2+Math.sin(yy*.08+S.t*7+l)*4,yy);ctx.fill()}}}}},
+          const A=fireArt(),len=yb+12-top,wob=Math.sin(S.t*5+o.x)*2;ctx.drawImage(A.cl,0,0,64,256,Math.round(x-o.w/2+wob),top+18,o.w,Math.round(len-18+Math.sin(S.t*6)*4));
+          ctx.fillStyle='#ffb347';for(let q=0;q<2;q++){const ph=(S.t*1.6+q*.5+o.x*.01)%1;ctx.globalAlpha=1-ph;ctx.beginPath();ctx.arc(x+wob+(q?6:-5),yb+14+ph*60,4-ph*2,0,7);ctx.fill()}ctx.globalAlpha=1}}}},
   riviere:{back(p,m,st){const d=m.data,gy=sy(p,0);d.stones.forEach((s,i)=>{const k=st?st.sink[i]:0;if(k>=1)return;const x=sx(p,s.x);if(x<-80||x>W+80)return;
       const y=gy+4+s.dy+k*22+(k>0?Math.sin(S.t*30)*1.5:0);ctx.globalAlpha=1-k*.6;ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(x,y+12,36,8,0,0,7);ctx.fill();
       ctx.fillStyle=k>0?'#5a2a20':'#4a3026';poly([[x-34,y+8],[x-22,y-8],[x+8,y-12],[x+32,y-2],[x+30,y+10]]);ctx.fillStyle=k>0?`rgb(${150+100*k|0},${60+20*k|0},30)`:'#6b4a3a';poly([[x-22,y-8],[x+8,y-12],[x+2,y+2],[x-18,y+4]]);
@@ -885,7 +935,7 @@ const MGDRAW={
   couloir:{back(p,m,st){const d=m.data,gy=sy(p,0);const c0=sx(p,d.c0),c1=sx(p,d.c1);
       if(c1>0&&c0<W){ctx.strokeStyle='rgba(236,230,214,.35)';ctx.lineWidth=2;for(let k=0;k<14;k++){const y=30+k*16,xx=((hash(k,3)*W*2-S.t*700)%(W+300)+W+300)%(W+300)-150;ctx.beginPath();ctx.moveTo(Math.max(c0,xx),gy-y);ctx.lineTo(Math.min(c1,xx+120),gy-y-2);ctx.stroke()}}
       for(const r of d.rings){const x=sx(p,r.x);if(x<-80||x>W+80)continue;const got=st&&st.got[r.x];if(!obCenter('anneau-air-arriere_'+frame4(),x,gy-r.y,88,0,got?.35:1)){ctx.strokeStyle='#4dbae7';ctx.lineWidth=6;ctx.beginPath();ctx.ellipse(x,gy-r.y,22,42,0,0,7);ctx.stroke()}}
-      if(st)for(const pr of st.proj){const x=sx(p,pr.x);const h=pr.k==='branche'?46:pr.k.startsWith('caillou')?34:30;if(!obCenter(pr.k,x,gy-pr.y,h,pr.r)){ctx.fillStyle='#7a5b3c';ctx.beginPath();ctx.arc(x,gy-pr.y,14,0,7);ctx.fill()}}},
+      if(st&&st.proj)for(const pr of st.proj){const x=sx(p,pr.x);const h=pr.k==='branche'?46:pr.k.startsWith('caillou')?34:30;if(!obCenter(pr.k,x,gy-pr.y,h,pr.r)){ctx.fillStyle='#7a5b3c';ctx.beginPath();ctx.arc(x,gy-pr.y,14,0,7);ctx.fill()}}},
     front(p,m,st){const d=m.data,gy=sy(p,0);for(const r of d.rings){const x=sx(p,r.x);if(x<-80||x>W+80)continue;obCenter('anneau-air-avant_'+frame4(),x,gy-r.y,88,0,st&&st.got[r.x]?.35:1)}}},
   crete:{front(p,m,st){if(!st||!st.g)return;const t=st.g.t;const a=t<.7?t/.7*.5:t>1.5?(1.75-t)/.25:1;const n='rafales_'+frame4(12);
       if(OB[n]){ctx.save();ctx.globalAlpha=a;const o=OB[n];const s=W*1.1/o.w;const off=t<.7?(1-t/.7)*300:-((t-.7)*900%300);ctx.drawImage(o.c,off-60,20,o.w*s,o.h*s*.9);ctx.restore()}}},
@@ -899,10 +949,10 @@ function drawZones(p,m,st,front){if(!st||!st.balls)return;const gy=sy(p,0);
     ctx.globalAlpha=.4+.5*k;ctx.strokeStyle='#ff5028';ctx.lineWidth=3;ctx.setLineDash([8,6]);ctx.beginPath();ctx.ellipse(x,yy+4,w/2,9,0,0,7);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
     ctx.fillStyle='rgba(40,10,6,.35)';ctx.beginPath();ctx.ellipse(x,yy+4,w/2*k,9*k,0,0,7);ctx.fill();drawTx('!',x,yy-8,26,'#ffde59')}
   for(const b of st.balls){const k=b.t/b.T,l=b.ls[0];if(front!==(l>p.lane+.01))continue;const x=sx(p,b.x)+90*(1-k),yy=lerp(-60,gy+laneY(l),k*k);
-    ctx.strokeStyle='rgba(255,120,40,.45)';ctx.lineWidth=10;ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+40,yy-70);ctx.stroke();ctx.fillStyle='#ff8a2a';ctx.beginPath();ctx.arc(x,yy,15,0,7);ctx.fill();ctx.fillStyle='#ffde59';ctx.beginPath();ctx.arc(x-4,yy-4,7,0,7);ctx.fill()}
+    const ang=Math.atan2(-Math.max(70,2*k*(gy+laneY(l)+60)),90);ctx.save();ctx.translate(Math.round(x),Math.round(yy));ctx.rotate(ang);ctx.drawImage(fireArt().fb,-32,-32);ctx.restore()}
   for(const z of st.zones)for(const l of z.ls){if(front!==(l>p.lane+.01))continue;const x=sx(p,z.x);if(x<-200||x>W+200)continue;const yy=gy+laneY(l),w=z.w*(1+(l-1)*.08),fade=Math.min(1,z.life/.4);
     ctx.globalAlpha=fade;ctx.fillStyle='rgba(40,10,6,.55)';ctx.beginPath();ctx.ellipse(x,yy+4,w/2,10,0,0,7);ctx.fill();
-    for(let q=0;q<5;q++){const fx=x-w/2+12+q*(w-24)/4,fh=22+Math.sin(S.t*14+q*2)*8;ctx.fillStyle=q&1?'#ff8a2a':'#ffc04a';poly([[fx-9,yy+6],[fx+Math.sin(S.t*10+q)*4,yy+6-fh],[fx+9,yy+6]])}
+    for(let q=0;q<4;q++){const fx=x-w/2+16+q*(w-32)/3;flame(fx,yy+8,30,34+(q&1)*8,q*2.3+z.x*.01)}
     const age=S.t-z.born;if(age<.25){ctx.globalAlpha=1-age*4;ctx.fillStyle='#ffdc78';ctx.beginPath();ctx.arc(x,yy,40+age*200,0,7);ctx.fill()}ctx.globalAlpha=1}}
 function drawPads(p,m,st,front){const d=m.data,gy=sy(p,0);d.cols.forEach((c,ci)=>{const x=sx(p,c.x);if(x<-80||x>W+80)return;
   c.pads.forEach((pad,l)=>{if(!pad||front!==(l>p.lane+.01))return;const dry=pad==='sec';const yy=gy+laneY(l)+6,bob=Math.sin(S.t*2+ci+l)*2,sc=1+(l-1)*.08;
@@ -912,13 +962,13 @@ function drawPads(p,m,st,front){const d=m.data,gy=sy(p,0);d.cols.forEach((c,ci)=
     else{ctx.fillStyle='rgba(168,227,238,.85)';for(let q=0;q<3;q++){ctx.beginPath();ctx.arc(x-16+q*16,yy+bob-4-((S.t*20+q*7)%10),2.5,0,7);ctx.fill()}}
     if(st&&!st.hop&&st.on===ci-1&&Math.round(p.laneT)===l){ctx.strokeStyle=dry?'#ffde59':'#ff7a6a';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(x,yy+bob,48*sc,16*sc,0,0,7);ctx.stroke()}})})}
 function drawMGs(p,which){const b0=p.camX-PX-400,b1=p.camX+W-PX+400;for(const m of C.mgs){if(m.x1<b0||m.x0>b1)continue;const dr=MGDRAW[m.id];if(!dr||!dr[which])continue;
-  const st=p.ms&&curMG(p)===m?p.ms:null;dr[which](p,m,st)}}
+  // pendant la transition entre biomes, l'épreuve suivante n'est pas encore lancée : son état n'existe pas encore
+  const st=p.state!=='trans'&&p.ms&&curMG(p)===m?p.ms:null;dr[which](p,m,st)}}
 
 // ---------- menaces ----------
 function drawThreat(p){if(p.state==='trans')return;const bm=curMG(p).biome;const tx=sx(p,p.tx);if(tx<-260)return;const gy=sy(p,0);const t=S.t;
-  if(bm==='fire'){for(let l=0;l<4;l++){ctx.fillStyle=['#5c1410','#b8321a','#e5641e','#ffc04a'][l];ctx.beginPath();ctx.moveTo(-10,VH);const ex=tx-l*26;ctx.lineTo(-10,gy-150+l*30);
-      for(let y=gy-150+l*30;y<=VH;y+=14){ctx.lineTo(ex+Math.sin(y*.05+t*(5+l))*14+Math.sin(y*.13-t*3)*8+(y>gy?18:0),y)}ctx.lineTo(-10,VH);ctx.fill()}
-    if(Math.random()<.4)p.parts.push({x:p.tx-Math.random()*40,y:Math.random()*120,vx:-30+Math.random()*60,vy:120+Math.random()*120,l:.8,c:'#ffb04a',r:0,sz:3})}
+  if(bm==='fire'){drawLavaFlow(p,tx,gy);
+    if(Math.random()<.3)p.parts.push({x:p.tx-Math.random()*60,y:40+Math.random()*90,vx:20+Math.random()*60,vy:90+Math.random()*120,l:.8,c:'#ffb04a',r:0,sz:3})}
   else if(bm==='water'){for(let l=0;l<4;l++){ctx.fillStyle=['#0e417e','#0b59a6','#1975c0','#4dbae7'][l];ctx.beginPath();const ex=tx-l*22;ctx.moveTo(-10,VH);ctx.lineTo(-10,-10);ctx.lineTo(ex-140,-10+l*12);
       ctx.quadraticCurveTo(ex+70+Math.sin(t*3)*10,40+l*20,ex+20,130+l*16);ctx.quadraticCurveTo(ex-20,90+l*10,ex-40+l*4,150+l*20);ctx.quadraticCurveTo(ex+10+Math.sin(t*5+l)*8,gy-40,ex+10,VH);ctx.fill()}
     ctx.fillStyle='#e8eef7';for(let k=0;k<8;k++){ctx.beginPath();ctx.arc(tx-60+k*12+Math.sin(t*5+k)*4,40+k*12+Math.cos(t*4+k)*6,5,0,7);ctx.fill()}}
@@ -989,10 +1039,14 @@ async function loadBaked(){try{const r=await fetch('assets/png/manifest.json',{c
   let bands=[],clouds=null;if(V){V.bands.forEach((b,i)=>jobs.push(imgLoad('assets/png/vagues/vague-'+(i+1)+'.png'+v).then(c=>{bands[i]={c,y0px:b.y0,fill:b.fill}})));if(V.clouds)jobs.push(imgLoad('assets/png/vagues/nuages.png'+v).then(c=>{clouds={c,y0px:V.clouds.y0}}))}
   const vl={};if(man.volcan)for(const n of Object.keys(man.volcan.layers)){const o=man.volcan.layers[n];jobs.push(imgLoad('assets/png/decor-volcan/'+n+'.png'+v).then(img=>{vl[n]={img,y0:o.y0}}))}
   await Promise.all(jobs);DEC=d;if(V)VAG={w:V.w,h:V.h,bands,clouds};if(man.volcan)VOL={w:man.volcan.w,h:man.volcan.h,layers:vl};
+  // images recopiées dans des canvas : déjà décodées, le navigateur ne peut plus les jeter entre deux biomes
+  // (sinon le premier dessin d'un biome les redécode : à-coup de 50 à 100 ms sans carte graphique)
+  const own=im=>{const c=document.createElement('canvas');c.width=im.naturalWidth||im.width;c.height=im.naturalHeight||im.height;c.getContext('2d').drawImage(im,0,0);return c};
+  for(const o of [...Object.values(d),...Object.values(vl)])o.img=own(o.img);for(const b of bands)b.c=own(b.c);if(clouds)clouds.c=own(clouds.c);for(const k in OB)OB[k].c=own(OB[k].c);
   for(const im of [...Object.values(d).map(o=>o.img),...Object.values(vl).map(o=>o.img),...bands.map(b=>b.c),...(clouds?[clouds.c]:[])])trimCols(im);
   BAKED.ok=true;return true}catch(e){logErr(e);return false}}
 // première apparition d'un texte décoratif ou d'une image = coûteuse sur la borne : on prépare tout pendant le menu
-function warmUp(){const jobs=[];const T=(t,s,c,st,lw)=>jobs.push(()=>txImg(t,s,c,st,lw));
+function warmUp(){const jobs=[()=>fireArt()];const T=(t,s,c,st,lw)=>jobs.push(()=>txImg(t,s,c,st,lw));
   for(const [t,c] of [['AÏE !','#ff9a7a'],['OUF !','#ffde59'],['CHECKPOINT !','#efe3c8'],['ÉCHAPPÉ !','#9dff8a'],['SOUFFLE !','#7fe0ff'],['PARFAIT !','#9dff8a'],['ÇA COULE !','#7fe0ff'],['À BOUT DE SOUFFLE','#ff9a7a']])T(t,30,c,'#140b09',7);
   for(let n=2;n<10;n++)T('SANS FAUTE x'+n,42,'#ffde59','#140b09',7);
   for(const r of ['Brûlé !','Détrempé !','Chute !','Aspiré !','Coulé !','Chaviré !','Emporté !','Rattrapé par la lave !','Rattrapé par le tsunami !','Rattrapé par la tornade !'])T(r,46,'#e5641e');
@@ -1157,7 +1211,11 @@ function drawFx(p){for(const f of p.fx){const a=clamp(f.l/f.max,0,1);
   ctx.globalAlpha=1}
 function speedLines(p){if(Q.lite)return;let s=0;if(p.state==='trans')s=1;else if(p.state==='run'){if(p.form==='renard'&&p.onG&&p.stun<=0&&spanAt(p.x).k==='ground')s=.75;else if(p.form==='avion'&&!p.onG)s=.6}if(!s)return;
   ctx.strokeStyle=`rgba(255,255,255,${.2*s})`;ctx.lineWidth=2;for(let k=0;k<12;k++){const y=10+hash(k,9)*VH*.5,len=80+hash(k,8)*180,x=W+200-((S.t*(1300+hash(k,7)*900)+hash(k,6)*W*2)%(W*2+400));ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+len,y);ctx.stroke()}}
-function drawView(p,oy){ctx.save();ctx.translate(0,oy);ctx.beginPath();ctx.rect(0,0,W,VH);ctx.clip();
+// une erreur de dessin ne doit jamais figer l'écran : on la note, on remet le contexte à zéro et la partie continue
+const ERRSEEN=new Set();
+function drawView(p,oy){try{drawView0(p,oy)}catch(e){for(let k=0;k<12;k++)ctx.restore();ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.shadowBlur=0;ctx.setLineDash([]);
+  const m=String(e&&e.message);if(!ERRSEEN.has(m)){ERRSEEN.add(m);logErr(e)}}}
+function drawView0(p,oy){ctx.save();ctx.translate(0,oy);ctx.beginPath();ctx.rect(0,0,W,VH);ctx.clip();
   const panic=p.lives===1&&p.state==='run'&&!S.infinite;const dd=p.x-p.tx,rumble=p.state==='run'&&dd<120?(1-dd/120)*4:0;
   const sh=(p.shake>0?14*p.shake:0)+(panic?2:0)+rumble;
   // déplacements sur des pixels entiers : un décalage d'une fraction de pixel oblige à ré-échantillonner toute l'image (très lent sans carte graphique)
