@@ -15,7 +15,8 @@ Ouvre `index.html` dans un navigateur, ou la version en ligne (GitHub Pages).
 - `Échap` : pause · `M` : son · `²` : calques DA (noms des calques, parallaxe, hitboxes)
 - Manettes : boutons 1-4 = formes, gâchettes = action, stick ou croix = joystick
 - Mode 1 joueur contre un bot, ou 2 joueurs en écran scindé
-- Qualité graphique (menu) : Auto baisse la résolution si l'affichage ralentit ; Économe pour une borne sans carte graphique
+- Qualité graphique (menu) : Auto passe à 30 images/s si l'affichage ralentit ; Économe = 30 images/s et résolution à 85 % pour une borne sans carte graphique
+- `?cpu` à la fin de l'adresse : rendu forcé sans carte graphique, pour tester comme sur la borne
 
 ## Déroulement
 
@@ -47,6 +48,20 @@ Fichier unique, sans dépendance ni build : tout est dans `index.html`.
 - `assets/origamis/<forme>/degats/` : brûlé, déchiré, détrempé (fournis en couleurs J1). Les variantes `degats/J2/` et `degats/BOT/` sont générées automatiquement à partir de la palette J1 → J2 / BOT.
 - `assets/origamis/bateau/calques/` : coque, pagaie et eau séparées pour animer le bateau qui rame.
 - `assets/obstacles/` : obstacles de la tornade (anneaux d'air avant / arrière en 4 images, projectiles, débris, crête, rafales, tornade de fond).
+- `assets/decor-tornade/` : décor du biome tornade en 8 calques (parallaxe, éclairs, herbes au premier plan devant le personnage).
+- `assets/ui/coeur.png` : le cœur des vies (et sa version grise).
 - `assets/vagues.json` : le fond du biome d'eau, extrait de `vagues.ai` (5 bandes de vagues vectorielles, animées en parallaxe et en houle).
 
 Pour remplacer un visuel, il suffit de remplacer le SVG du même nom : le jeu le recharge tel quel. Les sprites partagent le même cadrage (pieds du renard en 92,139, grenouille en 110,140, bateau en 100,131, avion en 100,72).
+
+## Visuels « cuits » en PNG (important pour la borne)
+
+Le jeu charge d'abord `assets/png/` : les SVG y sont déjà convertis en images (texture papier, ombres et contour compris). La borne n'a donc plus de filtres SVG à calculer pendant la partie. Les SVG restent la source, et servent de secours si `assets/png/` manque.
+
+Après chaque modification d'un visuel :
+
+```
+node outils/serveur-cuisson.js
+```
+
+puis ouvrir http://localhost:5300/outils/cuisson.html, cliquer sur « Cuire » (quelques secondes) et commiter `assets/png/`.

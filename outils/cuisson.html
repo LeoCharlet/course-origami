@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Cuisson des visuels</title>
+<style>body{font:15px system-ui,sans-serif;margin:24px;background:#f3ecdd;color:#24160f;max-width:760px}button{font:inherit;font-weight:700;padding:10px 20px;background:#8e1b12;color:#fff;border:0;border-radius:3px;cursor:pointer}#log{white-space:pre-wrap;font:12px/1.5 ui-monospace,monospace;background:#fff;padding:12px;margin-top:16px;min-height:120px}code{background:#fff;padding:1px 5px}</style></head>
+<body>
+<h1>Cuisson des visuels</h1>
+<p>Cet outil transforme les SVG de <code>assets/</code> en images PNG prêtes à afficher (<code>assets/png/</code>). Le jeu les charge en priorité : la borne n'a plus à calculer les filtres SVG (texture papier, ombres) pendant la partie.</p>
+<p>À refaire après chaque modification d'un visuel : lancer <code>node outils/serveur-cuisson.js</code> à la racine du dépôt, ouvrir cette page via <code>http://localhost:5300/outils/cuisson.html</code>, cliquer sur « Cuire », puis commiter <code>assets/png/</code>.</p>
+<button id="go">Cuire</button>
+<div id="log"></div>
+<script>
+const log=s=>{document.getElementById('log').textContent+=s+'\n'};
+const load=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error('introuvable : '+src));i.src=src});
+async function save(name,data){const body=typeof data==='string'?data:await new Promise(r=>data.toBlob(r,'image/png'));const r=await fetch('/save?name='+encodeURIComponent(name),{method:'POST',body});if(!r.ok)throw new Error('écriture refusée : '+name)}
+const mk=(w,h)=>{const c=document.createElement('canvas');c.width=Math.max(1,Math.ceil(w));c.height=Math.max(1,Math.ceil(h));return c};
+// contour sombre (lisibilité à distance de borne) : silhouette décalée dans 8 directions sous le dessin
+function withOutline(im,w,h,px,alpha){const c=mk(w,h),g=c.getContext('2d');if(px>0){const s=mk(w,h),sg=s.getContext('2d');sg.drawImage(im,0,0,w,h);sg.globalCompositeOperation='source-in';sg.fillStyle='rgba(20,12,10,'+alpha+')';sg.fillRect(0,0,w,h);for(let a=0;a<8;a++)g.drawImage(s,Math.cos(a*Math.PI/4)*px,Math.sin(a*Math.PI/4)*px)}g.drawImage(im,0,0,w,h);return c}
+function bbox(c){const g=c.getContext('2d'),d=g.getImageData(0,0,c.width,c.height).data;let x0=c.width,y0=c.height,x1=0,y1=0;for(let y=0;y<c.height;y+=1)for(let x=0;x<c.width;x+=2)if(d[(y*c.width+x)*4+3]>20){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}return x1<x0?[0,0,c.width,c.height]:[x0,y0,x1+1,y1+1]}
+function shrink(c,f){const s=mk(c.width*f,c.height*f),g=s.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(c,0,0,s.width,s.height);return s}
+
+const SKINS=['J1','J2','BOT'],FORMS=['grenouille','avion','bateau','renard'];
+const POSES={renard:['course','saut','esquive-haut','esquive-bas','touche','vent'],grenouille:['attente','saut','atterrissage','aplatie','touche'],bateau:['flotte','pagaie','rempli-d-eau','coule'],avion:['vol-plane','montee','descente','inclinaison','touche']};
+const DEGATS=['brule','dechire','detrempe'],CALQUES=['1_bateau','2_pagaie','3_eau'];
+function sprURL(sk,f,k,n){const b='../assets/origamis/'+f+'/';if(k==='deg')return b+'degats/'+(sk==='J1'?'':sk+'/')+f+'_'+n+'.svg';if(k==='cal')return b+'calques/'+sk+'/'+n+'.svg';return b+sk+'/'+f+'_'+n+'.svg'}
+const OBS_FILES={avion:['anneau-air-arriere_1','anneau-air-arriere_2','anneau-air-arriere_3','anneau-air-arriere_4','anneau-air-avant_1','anneau-air-avant_2','anneau-air-avant_3','anneau-air-avant_4','branche','caillou-1','caillou-2','feuille-automne','feuille-verte'],
+  grenouille:['hauteur-plaque-roche-1','hauteur-plaque-roche-2','hauteur-tronc-court','hauteur-tronc-long','sol-debris','sol-rocher','sol-souche'],
+  renard:['crete-etroite','rafales_1','rafales_2','rafales_3','rafales_4','tornade-de-fond_1','tornade-de-fond_2','tornade-de-fond_3','tornade-de-fond_4']};
+const DECOR=['2_nuages','3_eclairs','4_montagnes','5_foret-lointaine','6_foret-moyenne','7_foret-proche','8_premier-plan'];
+const DS=.56, VS=1.05, CW=125, CH=106, COLS=12;
+
+async function cuire(){
+  const t0=performance.now();const man={version:Date.now(),sprites:{cell:[CW,CH],items:{}},obstacles:{},decor:{},vagues:null};
+  // 1. origamis : une seule planche (125 × 106 px par sprite, contour compris)
+  const jobs=[];for(const sk of SKINS)for(const f of FORMS){POSES[f].forEach(n=>jobs.push([sk,f,'pose',n]));DEGATS.forEach(n=>jobs.push([sk,f,'deg',n]));if(f==='bateau')CALQUES.forEach(n=>jobs.push([sk,f,'cal',n]))}
+  const atlas=mk(COLS*CW,Math.ceil(jobs.length/COLS)*CH),ag=atlas.getContext('2d');ag.imageSmoothingQuality='high';
+  for(let i=0;i<jobs.length;i++){const [sk,f,k,n]=jobs[i];const im=await load(sprURL(sk,f,k,n));const big=withOutline(im,400,340,(k!=='cal'||n==='1_bateau')?7:0,.9);
+    const x=(i%COLS)*CW,y=Math.floor(i/COLS)*CH;ag.drawImage(big,x,y,CW,CH);man.sprites.items[sk+'/'+f+'/'+k+'/'+n]=[x,y]}
+  await save('sprites.png',atlas);log('origamis : '+jobs.length+' sprites');
+  // 2. obstacles (moitié de la taille du SVG, sauf rafales et tornade gardées en grand)
+  for(const g in OBS_FILES)for(const n of OBS_FILES[g]){const im=await load('../assets/obstacles/'+g+'/'+n+'.svg');const w=im.naturalWidth,h=im.naturalHeight;
+    const c=withOutline(im,w,h,/^(rafales|anneau)/.test(n)?0:5,.85),f=/^(rafales|tornade)/.test(n)?1:.5,s=shrink(c,f),bb=bbox(s);
+    await save('obstacles/'+n+'.png',s);man.obstacles[n]={w:s.width,h:s.height,bb}}
+  log('obstacles : '+Object.keys(man.obstacles).length);
+  // 3. décor de la tornade : chaque calque à l'échelle du jeu, recadré sur ce qui est dessiné
+  for(const n of DECOR){const im=await load('../assets/decor-tornade/'+n+'.svg');const w=Math.round(1600*DS),h=Math.round(600*DS);const c=mk(w,h),g=c.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(im,0,0,w,h);
+    const bb=bbox(c),y0=Math.max(0,bb[1]-2),y1=Math.min(h,bb[3]+2),cr=mk(w,y1-y0);cr.getContext('2d').drawImage(c,0,-y0);await save('decor-tornade/'+n+'.png',cr);man.decor[n]={w,h,y0}}
+  log('décor tornade : '+DECOR.length+' calques');
+  // 4. vagues du tsunami (assets/vagues.json, tiré de vagues.ai) : chaque plan avec son ombre portée
+  const V=await (await fetch('../assets/vagues.json')).json();
+  const plane=(paths,shadow)=>{const c=mk(V.w*VS,(V.h+30)*VS),g=c.getContext('2d');g.beginPath();g.rect(0,0,c.width,c.height);g.clip();
+    for(const p of paths){g.save();g.shadowColor=shadow;g.shadowBlur=9;g.shadowOffsetX=3;g.shadowOffsetY=5;g.scale(VS,VS);g.transform(p.m[0],p.m[1],p.m[2],p.m[3],p.m[4],p.m[5]);g.fillStyle=p.fill;g.fill(new Path2D(p.d));g.restore()}
+    const bb=bbox(c),y0=Math.max(0,bb[1]-2),y1=Math.min(c.height,bb[3]+2),cr=mk(c.width,y1-y0);cr.getContext('2d').drawImage(c,0,-y0);return {c:cr,y0}};
+  man.vagues={w:V.w,h:V.h,sky:V.sky||null,scale:VS,bands:[],clouds:null};
+  for(let i=0;i<V.bands.length;i++){const b=V.bands[i],r=plane([b],'rgba(6,22,46,.5)');await save('vagues/vague-'+(i+1)+'.png',r.c);man.vagues.bands.push({fill:b.fill,y0:r.y0,h:r.c.height})}
+  if(V.clouds&&V.clouds.length){const r=plane(V.clouds,'rgba(10,26,34,.45)');await save('vagues/nuages.png',r.c);man.vagues.clouds={y0:r.y0,h:r.c.height}}
+  log('vagues : '+V.bands.length+' plans'+(man.vagues.clouds?' + nuages':''));
+  await save('manifest.json',JSON.stringify(man));log('Terminé en '+((performance.now()-t0)/1000).toFixed(1)+' s. Pense à commiter assets/png/.');
+  window.CUIT=man}
+document.getElementById('go').onclick=()=>cuire().catch(e=>{log('ERREUR : '+e.message);window.CUIT_ERR=String(e)});
+</script>
+</body></html>
