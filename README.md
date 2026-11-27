@@ -22,6 +22,8 @@ Ouvre `index.html` dans un navigateur, ou la version en ligne (GitHub Pages).
 
 L'ordre des trois biomes est tiré au hasard à chaque partie. Chaque biome enchaîne trois épreuves de 5 à 7 secondes ; chacune exige une forme (annoncée à l'écran). Avec la mauvaise forme on ralentit, on coule ou on tombe, et la menace rattrape.
 
+La menace (lave, tsunami, tornade) reste toujours visible à gauche de l'écran. Avec la bonne forme, elle ralentit à mesure qu'elle se rapproche (jusqu'à 60 % de sa vitesse) : si l'on hésite ou qu'on se fait toucher, elle gagne doucement du terrain. Avec la mauvaise forme, elle ne ralentit pas et finit par rattraper.
+
 | Biome | Épreuve | Forme | Commande |
 |---|---|---|---|
 | Volcan | Gouffre de lave | Avion | le sol s'effondre ; maintenir l'action pour monter (l'air chaud porte et recharge le souffle), passer au-dessus des jets et sous les coulées |
@@ -48,6 +50,7 @@ Fichier unique, sans dépendance ni build : tout est dans `index.html`.
 - `assets/origamis/<forme>/degats/` : brûlé, déchiré, détrempé (fournis en couleurs J1). Les variantes `degats/J2/` et `degats/BOT/` sont générées automatiquement à partir de la palette J1 → J2 / BOT.
 - `assets/origamis/bateau/calques/` : coque, pagaie et eau séparées pour animer le bateau qui rame.
 - `assets/obstacles/` : obstacles de la tornade (anneaux d'air avant / arrière en 4 images, projectiles, débris, crête, rafales, tornade de fond).
+- `assets/png/decor-volcan/` : décor du biome volcan en 5 calques (ciel, montagnes, volcan, roches, premier plan), découpés depuis `volcan.ai` avec la texture papier.
 - `assets/decor-tornade/` : décor du biome tornade en 8 calques (parallaxe, éclairs, herbes au premier plan devant le personnage).
 - `assets/ui/coeur.png` : le cœur des vies (et sa version grise).
 - `assets/vagues.json` : le fond du biome d'eau, extrait de `vagues.ai` (5 bandes de vagues vectorielles, animées en parallaxe et en houle).

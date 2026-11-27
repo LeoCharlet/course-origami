@@ -275,7 +275,7 @@ const SPEED={
 const JUMP={renard:500,grenouille:800,avion:430,bateau:460};
 const BIOME={
   fire:{name:'LE VOLCAN',threat:'LAVE',tspeed:255,
-    sky:['#160806','#3d0f0b','#6a1a10'],layers:[['#4a120d','#2e0b08'],['#7a1a12','#55120c'],['#b8321a','#86210f']],
+    sky:['#f45e33','#fc6537','#ff7b46'],layers:[['#4a120d','#2e0b08'],['#7a1a12','#55120c'],['#b8321a','#86210f']],
     groundTop:'#efe3c8',groundBody:'#3b1410',groundEdge:'#1a0806',accent:'#e5641e',fx:'ember'},
   water:{name:'LE TSUNAMI',threat:'TSUNAMI',tspeed:270,
     sky:['#3e6573','#466f7c','#56808c'],layers:[['#9fb1e3','#7f93cf'],['#5d7cc0','#45629f'],['#2f5089','#22396a']],
@@ -336,7 +336,7 @@ function setMute(m){AU.muted=m;LS.set('origami-mute',m?'1':'0');if(AU.master)AU.
 const S={mode:1,phase:'menu',t:0,count:0,da:false,infinite:false,players:[],paused:false,endT:0};
 function makePlayer(i,bot){return{i,col:bot?PCOL[2]:PCOL[i],skin:bot?'BOT':'J'+(i+1),prevForm:null,animT:0,landT:0,dk:'dechire',bot:bot?{fd:-1,w:-1,mt:0,sx:0,sd:1,tap:0,err:.05,dt:0}:null,name:bot?'BOT':'JOUEUR '+(i+1),
   x:120,y:0,vy:0,form:'renard',onG:true,lives:3,state:'run',mg:0,wet:0,stun:0,inv:0,morph:0,deadT:0,reason:'',
-  tx:120-520,camX:120,camY:0,shake:0,banner:null,trans:null,time:0,finishT:0,rank:0,
+  tx:120-300,camX:120,camY:0,shake:0,banner:null,trans:null,time:0,finishT:0,rank:0,
   in:{act:false,held:false,rel:false,up:false,down:false,form:null},lane:1,laneT:1,fuel:1,mashE:0,joy:{x:0,y:0},prevHeld:false,prevJy:0,lastSx:0,shakes:0,spin:0,paddle:0,ms:{},parts:[],beatT:0,flash:0,flashC:'255,255,255',
   sx:1,sy:1,hs:0,kick:0,punch:0,cardBounce:0,fx:[],trail:[],trailT:0,heartFx:null,streak:0,clean:true,close:false,nearO:null,nearG:99}}
 
@@ -581,6 +581,7 @@ const MGDEF={
       if(lo&&!hiSoon&&p.onG&&lo.x-p.x<62+Math.random()*20&&!b.skipO){b.tap=2;p.in.held=true;return}
       if(p.in.held&&p.onG&&!hiSoon){p.in.held=false;return}p.in.held=false}}
 };
+const TH_MAX=300;
 const THREAT_SPEED={gouffre:235,riviere:220,pluie:280,tourbillon:225,nenuphars:200,paquets:235,couloir:270,crete:215,debris:265};
 const BIOME_MGS={fire:['gouffre','riviere','pluie'],water:['tourbillon','nenuphars','paquets'],wind:['couloir','crete','debris']};
 
@@ -611,7 +612,7 @@ function botThink(p,dt){const b=p.bot;b.dt=dt;const m=curMG(p),D=MGDEF[m.id];
   if(D.bot)D.bot(p,m,p.ms,b)}
 
 // ---------- logique joueur ----------
-function setForm(p,f){if(p.form===f)return;p.prevForm=p.form;p.form=f;p.morph=.22;burst(p,12,p.col.base,220);p.fx.push({k:'ring',x:p.x,y:p.y+20,l:.32,max:.32});p.punch=.1;p.cardBounce=.25;p.sx=1.35;p.sy=.65;SFX.fold()}
+function setForm(p,f){if(p.form===f)return;p.prevForm=p.form;p.form=f;p.morph=.22;burst(p,12,p.col.base,220);p.fx.push({k:'ring',x:p.x,y:p.y+20,l:.32,max:.32});p.cardBounce=.25;p.sx=1.35;p.sy=.65;SFX.fold()}
 function pop(p,t,c,big){if(p.fx.some(f=>f.t===t&&f.l>.5))return;p.fx.push({k:'txt',t,y:p.y+80,l:1.1,max:1.1,c:c||'#efe3c8',big})}
 function confetti(p,n){const cols=['#efe3c8','#e5641e','#6f8fd6','#f2b04a','#a7b5ac','#e03a24'];for(let k=0;k<n;k++)p.parts.push({x:p.x+(Math.random()-.5)*60,y:p.y+30,vx:(Math.random()-.5)*600,vy:250+Math.random()*450,l:1.3+Math.random()*.7,c:cols[k%cols.length],r:Math.random()*6,sz:6+Math.random()*5,cf:true})}
 function land(p,iv){const k=clamp(iv/1500,0,.5);if(iv>300)p.landT=.14;p.sx=1+k;p.sy=1-k*.8;const w=isWater(spanAt(p.x).k);const c=w?'#e8eef7':'rgba(239,227,200,.9)';
@@ -619,8 +620,8 @@ function land(p,iv){const k=clamp(iv/1500,0,.5);if(iv>300)p.landT=.14;p.sx=1+k;p
   if(iv>650){p.kick=k*14;SFX.land()}}
 function burst(p,n,col,spd){for(let k=0;k<n;k++){const a=Math.random()*Math.PI*2,s=(spd||160)*(.4+Math.random());p.parts.push({x:p.x,y:p.y+18,vx:Math.cos(a)*s,vy:Math.sin(a)*s+80,l:.5+Math.random()*.3,c:col,r:Math.random()*6,sz:4+Math.random()*5})}}
 function banner(p,t,s,d,col){p.banner={t,s,d:d||1.6,max:d||1.6,col}}
-function loseLife(p,reason){if(p.state!=='run')return;p.state='dead';p.deadT=1.05;p.reason=reason;p.dk=(p.form==='bateau'&&isWater(spanAt(p.x).k)&&reason!=='Brûlé !')?'coule':reason==='Brûlé !'?'brule':reason==='Détrempé !'?'detrempe':'dechire';p.flash=1;SFX.lose();burst(p,22,reason==='Brûlé !'?'#ff7a1a':reason==='Détrempé !'?'#6f8fd6':p.col.base,260);p.hs=.14;p.flashC='255,70,30';p.clean=false;p.streak=0;p.close=false;p.trail=[];if(!S.infinite){p.lives--;p.heartFx={k:p.lives,t:1.3};noise(.2,.35,2600,1.2);noise(.14,.3,4300,1.5,AU.ctx&&AU.ctx.currentTime+.12)}p.shake=.8;if(!p.bot)S.slowT=.45}
-function respawn(p){const m=curMG(p);p.x=m.x0+90;p.y=0;p.vy=0;p.onG=true;p.wet=0;p.stun=0;p.inv=1.3;p.state='run';p.tx=p.x-560;p.camX=p.x;p.lane=1;p.laneT=1;p.fuel=1;p.spin=0;p.nearO=null;p.close=false;
+function loseLife(p,reason){if(p.state!=='run')return;p.state='dead';p.deadT=1.05;p.reason=reason;p.dk=(p.form==='bateau'&&isWater(spanAt(p.x).k)&&reason!=='Brûlé !')?'coule':reason==='Brûlé !'?'brule':reason==='Détrempé !'?'detrempe':'dechire';p.flash=1;SFX.lose();burst(p,22,reason==='Brûlé !'?'#ff7a1a':reason==='Détrempé !'?'#6f8fd6':p.col.base,260);p.hs=.08;p.flashC='255,70,30';p.clean=false;p.streak=0;p.close=false;p.trail=[];if(!S.infinite){p.lives--;p.heartFx={k:p.lives,t:1.3};noise(.2,.35,2600,1.2);noise(.14,.3,4300,1.5,AU.ctx&&AU.ctx.currentTime+.12)}p.shake=.6;if(!p.bot)S.slowT=.25}
+function respawn(p){const m=curMG(p);p.x=m.x0+90;p.y=0;p.vy=0;p.onG=true;p.wet=0;p.stun=0;p.inv=1.3;p.state='run';p.tx=p.x-TH_MAX;p.camX=p.x;p.lane=1;p.laneT=1;p.fuel=1;p.spin=0;p.nearO=null;p.close=false;
   if(p.bot){Object.assign(p.bot,{fd:-1,w:-1,tap:0,aim:-1,col:null,ign:false,lo:null,skipO:false})}enterMG(p)}
 function curMG(p){return C.mgs[Math.min(p.mg,C.mgs.length-1)]}
 function enterMG(p,quiet){const m=curMG(p);p.ms={};const D=MGDEF[m.id];if(D.enter)D.enter(p,m,p.ms);
@@ -680,9 +681,12 @@ function updPlayer(p,dt){
   // menace
   // la menace avance à une vitesse propre à chaque épreuve (un peu sous l'allure de la bonne forme)
   const bm=BIOME[m.biome];
-  p.tx+=(THREAT_SPEED[m.id]||bm.tspeed)*dt;p.tx=Math.max(p.tx,p.x-680);
+  // la menace reste toujours à l'écran (au plus TH_MAX derrière). Avec la bonne forme, plus elle est proche, plus elle ralentit (jusqu'à 60 %) :
+  // si l'on ralentit, elle se rapproche doucement. Avec la mauvaise forme, elle ne ralentit pas et finit par rattraper.
+  const base=THREAT_SPEED[m.id]||bm.tspeed,gap=p.x-p.tx,near=clamp((gap-30)/(TH_MAX-30),0,1);
+  p.tx+=(p.form===m.form?base*(.6+.4*near):base*1.12)*dt;p.tx=Math.max(p.tx,p.x-TH_MAX);
   if(p.inv>0)p.inv-=dt;else if(p.tx>p.x-18){loseLife(p,'Rattrapé par '+(bm.threat==='LAVE'?'la lave':bm.threat==='TSUNAMI'?'le tsunami':'la tornade')+' !');return}
-  const dd=p.x-p.tx;if(dd<110)p.close=true;else if(p.close&&dd>300){p.close=false;pop(p,'ÉCHAPPÉ !','#9dff8a');SFX.swoosh()}
+  const dd=p.x-p.tx;if(dd<70)p.close=true;else if(p.close&&dd>220){p.close=false;pop(p,'ÉCHAPPÉ !','#9dff8a');SFX.swoosh()}
   // checkpoints
   if(p.x>m.x1&&p.mg<C.mgs.length-1){p.mg++;const n=curMG(p);p.streak=p.clean?p.streak+1:0;p.clean=true;SFX.check(p.streak);confetti(p,Q.lite?14:36);p.flash=.35;p.flashC='255,255,255';
     pop(p,p.streak>=2?'SANS FAUTE x'+p.streak:'CHECKPOINT !',p.streak>=2?'#ffde59':'#efe3c8',p.streak>=2);
@@ -697,7 +701,7 @@ function updTrans(p,dt){const T=p.trans;T.t+=dt;const k=clamp(T.t/5,0,1),tr=T.tr
   const peak=T.from==='fire'?170:T.from==='water'?230:250;
   if(k<.5){const u=k/.5;p.y=Math.sin(u*Math.PI/2)*peak;p.form=T.from==='water'&&u<.8?'bateau':'avion';p.spin=T.from==='wind'?u*14:0;p.vy=300}
   else{const u=(k-.5)/.5;p.y=Math.cos(u*Math.PI/2)*peak;p.form='avion';p.spin=0;p.vy=-200}
-  if(T.t>=5){p.state='run';p.y=0;p.onG=true;p.trans=null;p.tx=p.x-620;p.inv=.8;p.spin=0;enterMG(p);AU.biome=curMG(p).biome}}
+  if(T.t>=5){p.state='run';p.y=0;p.onG=true;p.trans=null;p.tx=p.x-TH_MAX;p.inv=.8;p.spin=0;enterMG(p);AU.biome=curMG(p).biome}}
 const fmt=t=>{const m=Math.floor(t/60),s=t-m*60;return m+':'+(s<10?'0':'')+s.toFixed(2)};
 
 // ---------- rendu ----------
@@ -720,18 +724,30 @@ let VAG=null;
 function loadVaguesSVG(){fetch('assets/vagues.json').then(r=>r.json()).then(j=>{VAG={w:j.w,h:j.h,bands:j.bands.map(b=>{const y0=Math.max(0,b.box[1]-4),y1=Math.min(j.h+30,b.box[3]+4),c=document.createElement('canvas');c.width=Math.ceil(j.w*VAG_S);c.height=Math.ceil((y1-y0)*VAG_S);
   const g=c.getContext('2d');g.scale(VAG_S,VAG_S);g.translate(0,-y0);g.beginPath();g.rect(0,0,j.w,j.h+40);g.clip();g.transform(b.m[0],b.m[1],b.m[2],b.m[3],b.m[4],b.m[5]);g.fillStyle=b.fill;g.fill(new Path2D(b.d));return {fill:b.fill,c,y0px:y0*VAG_S}}),clouds:null}}).catch(()=>{})}
 const VAG_P=[.05,.1,.17,.26,.38],VAG_SPD=[5,9,14,20,28],VAG_S=1.05;
-function drawTile(c,tx,top,w,h,flip){if(flip){ctx.save();ctx.translate(tx+w,0);ctx.scale(-1,1);ctx.drawImage(c,0,top,w+1,h);ctx.restore()}else ctx.drawImage(c,tx,top,w+1,h)}
+// un calque de décor est découpé en colonnes de 64 px, chacune réduite à sa hauteur utile :
+// on ne recopie pas les grandes zones transparentes (très coûteux sans carte graphique)
+const COLW=64;
+function trimCols(img){if(img.cols!==undefined)return img.cols;try{const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height,c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(img,0,0);
+  const d=g.getImageData(0,0,w,h).data,cols=[];for(let x0=0;x0<w;x0+=COLW){const x1=Math.min(w,x0+COLW);let a=h,b=-1;for(let y=0;y<h;y++){for(let x=x0;x<x1;x+=2)if(d[(y*w+x)*4+3]>8){if(y<a)a=y;b=y;break}}if(b>=a)cols.push([x0,a,x1-x0,b-a+1])}
+  img.cols=cols}catch(e){img.cols=null}return img.cols}
+function drawTile(c,tx,top,w,h,flip){const cols=c.cols;tx=Math.round(tx);top=Math.round(top);const iw=c.naturalWidth||c.width,ih=c.naturalHeight||c.height;
+  if(flip){ctx.save();ctx.translate(tx+w,0);ctx.scale(-1,1);tx=0}
+  if(cols){const kx=(w+1)/iw,ky=h/ih;for(const q of cols)ctx.drawImage(c,q[0],q[1],q[2],q[3],tx+q[0]*kx,top+q[1]*ky,q[2]*kx+.5,q[3]*ky)}else ctx.drawImage(c,tx,top,w+1,h);
+  if(flip)ctx.restore()}
 function drawVagues(camX,camY,a){const TW=VAG.w*VAG_S;ctx.globalAlpha=a;
   // nuages : en haut de l'écran, dérive lente (une tuile sur deux en miroir)
   if(VAG.clouds){const c=VAG.clouds.c,cs=.62,cw=TW*cs,ch=c.height*cs,off=camX*.02+S.t*7;for(let k=Math.floor(off/cw);k<=Math.floor((off+W)/cw);k++)drawTile(c,k*cw-off,-14+camY*.02,cw,ch,k&1)}
   VAG.bands.forEach((b,i)=>{
     // défilement : parallaxe + houle qui avance + balancement lent
-    const off=camX*VAG_P[i]+S.t*VAG_SPD[i]+Math.sin(S.t*.7+i*1.3)*12,bob=Math.sin(S.t*(1.1+i*.17)+i*.9)*(2+i*1.4),sw=1+Math.sin(S.t*(.9+i*.1)+i)*.012*(i+1);
+    const off=camX*VAG_P[i]+S.t*VAG_SPD[i]+Math.sin(S.t*.7+i*1.3)*12,bob=Math.sin(S.t*(1.1+i*.17)+i*.9)*(2+i*1.4),sw=1;
     const base=GY+110+camY*VAG_P[i]*.6+bob,h=b.c.height*sw,top=base-(VAG.h*VAG_S-b.y0px)*sw;
     for(let k=Math.floor(off/TW)-1;k<=Math.floor((off+W)/TW)+1;k++)drawTile(b.c,k*TW-off,top,TW,h,k&1)});
   ctx.globalAlpha=1}
 // ---------- décor de la tornade (8 calques de l'équipe créa) ----------
-let DEC=null;
+let DEC=null,VOL=null;
+const VOL_L=[['1_ciel',.02],['2_montagnes',.05],['3_volcan',.09],['4_roches',.17],['5_avant',.3]];
+function drawVolcanDecor(camX,camY,a){const base=GY+70;ctx.globalAlpha=a;for(const [n,p] of VOL_L){const l=VOL.layers[n];if(!l)continue;if(Q.lite&&n==='4_roches')continue;
+  const TW=VOL.w,off=camX*p,top=base-VOL.h+l.y0+camY*p*.5;for(let k=Math.floor(off/TW);k<=Math.floor((off+W)/TW);k++)drawTile(l.img,k*TW-off,top,TW,l.img.height,k&1)}ctx.globalAlpha=1}
 const DEC_L=[['2_nuages',.02,9],['3_eclairs',.03,0],['4_montagnes',.05,0],['5_foret-lointaine',.12,0],['6_foret-moyenne',.24,0],['7_foret-proche',.42,0]];
 function drawDecor(camX,camY,a){const base=GY+56;
   for(const [n,p,drift] of DEC_L){const l=DEC[n];if(!l)continue;if(Q.lite&&n==='6_foret-moyenne')continue;
@@ -743,10 +759,10 @@ function drawDecor(camX,camY,a){const base=GY+56;
 function drawDecorFront(p){if(!DEC||!DEC['8_premier-plan'])return;const B=biomeAt(p.camX);const a=B.id==='wind'?(B.to?1-clamp(B.f*1.4-.2,0,1):1):B.to==='wind'?clamp(B.f*1.4-.2,0,1):0;if(a<=0)return;
   const l=DEC['8_premier-plan'],TW=l.w,off=p.camX*1.15,top=GY+64-l.h+l.y0+p.camY;ctx.globalAlpha=a;for(let k=Math.floor(off/TW);k<=Math.floor((off+W)/TW);k++)drawTile(l.img,k*TW-off,top,TW,l.img.height,k&1);ctx.globalAlpha=1}
 function background(p){const B=biomeAt(p.camX);const camY=p.camY;
-  const draw=(b,a)=>{skyGrad(b,a);if(b==='fire')drawVolcano(p.camX,camY,a);if(b==='wind'&&!DEC)drawSun(a);if(b==='water'&&VAG)drawVagues(p.camX,camY,a);else if(b==='wind'&&DEC)drawDecor(p.camX,camY,a);else LAYERS.forEach((L,li)=>drawRidge(b,L,li,p.camX,camY,a))};
+  const draw=(b,a)=>{skyGrad(b,a);if(b==='fire'&&VOL){drawVolcanDecor(p.camX,camY,a);return}if(b==='fire')drawVolcano(p.camX,camY,a);if(b==='wind'&&!DEC)drawSun(a);if(b==='water'&&VAG)drawVagues(p.camX,camY,a);else if(b==='wind'&&DEC)drawDecor(p.camX,camY,a);else LAYERS.forEach((L,li)=>drawRidge(b,L,li,p.camX,camY,a))};
   draw(B.id,1);if(B.to&&B.f>0)draw(B.to,clamp(B.f*1.4-.2,0,1))}
 function drawSun(a){ctx.globalAlpha=a*.85;ctx.fillStyle='#f4efe2';ctx.beginPath();ctx.arc(980,90,46,0,7);ctx.fill();ctx.globalAlpha=1}
-const sx=(p,wx)=>PX+(wx-p.camX), sy=(p,wy)=>GY+p.camY-wy;
+const sx=(p,wx)=>Math.round(PX+wx-p.camX), sy=(p,wy)=>Math.round(GY+p.camY-wy);
 function tornTop(x0,x1,y,amp,seedX){ctx.lineTo(x0,y);for(let x=Math.ceil(x0/10)*10;x<x1;x+=10)ctx.lineTo(x,y+(hash(Math.floor((x+seedX)/10),5)-.5)*amp);ctx.lineTo(x1,y)}
 function poly(pts){ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);ctx.closePath();ctx.fill()}
 
@@ -906,7 +922,7 @@ function drawThreat(p){if(p.state==='trans')return;const bm=curMG(p).biome;const
   else if(bm==='water'){for(let l=0;l<4;l++){ctx.fillStyle=['#0e417e','#0b59a6','#1975c0','#4dbae7'][l];ctx.beginPath();const ex=tx-l*22;ctx.moveTo(-10,VH);ctx.lineTo(-10,-10);ctx.lineTo(ex-140,-10+l*12);
       ctx.quadraticCurveTo(ex+70+Math.sin(t*3)*10,40+l*20,ex+20,130+l*16);ctx.quadraticCurveTo(ex-20,90+l*10,ex-40+l*4,150+l*20);ctx.quadraticCurveTo(ex+10+Math.sin(t*5+l)*8,gy-40,ex+10,VH);ctx.fill()}
     ctx.fillStyle='#e8eef7';for(let k=0;k<8;k++){ctx.beginPath();ctx.arc(tx-60+k*12+Math.sin(t*5+k)*4,40+k*12+Math.cos(t*4+k)*6,5,0,7);ctx.fill()}}
-  else{if(!obCenter('tornade-de-fond_'+frame4(10),tx-150,gy-120,430,Math.sin(t*3)*.04)){for(let r=0;r<11;r++){const y=r*30+5,w=50+r*14+Math.sin(t*6+r)*10,cx=tx-90+Math.sin(t*3+r*.7)*20-r*4;ctx.fillStyle=['#46524f','#6e7f7a','#8e9b95','#ece6d6'][r%4];ctx.beginPath();ctx.ellipse(cx,y,w,13,0,0,7);ctx.fill()}}}
+  else{if(!obCenter('tornade-de-fond_'+frame4(10),tx-110,gy-120,430,Math.sin(t*3)*.04)){for(let r=0;r<11;r++){const y=r*30+5,w=50+r*14+Math.sin(t*6+r)*10,cx=tx-90+Math.sin(t*3+r*.7)*20-r*4;ctx.fillStyle=['#46524f','#6e7f7a','#8e9b95','#ece6d6'][r%4];ctx.beginPath();ctx.ellipse(cx,y,w,13,0,0,7);ctx.fill()}}}
   ctx.globalAlpha=1}
 function drawThreatPointer(p){if(p.state!=='run')return;const d=p.x-p.tx;const tx=sx(p,p.tx);if(tx>0)return;const bm=BIOME[curMG(p).biome];
   ctx.fillStyle=bm.accent==='#46524f'?'#323b39':bm.accent;ctx.globalAlpha=.9;poly([[8,VH/2],[26,VH/2-14],[26,VH/2+14]]);ctx.globalAlpha=1;ctx.fillStyle='#fff';ctx.font='700 12px "Work Sans",sans-serif';ctx.fillText(bm.threat+' '+Math.round(d/10)+' m',32,VH/2+4)}
@@ -971,8 +987,26 @@ async function loadBaked(){try{const r=await fetch('assets/png/manifest.json',{c
   for(const n of Object.keys(man.obstacles)){const o=man.obstacles[n];jobs.push(imgLoad('assets/png/obstacles/'+n+'.png'+v).then(c=>{OB[n]={c,w:o.w,h:o.h,bb:o.bb}}))}
   for(const n of Object.keys(man.decor)){const o=man.decor[n];jobs.push(imgLoad('assets/png/decor-tornade/'+n+'.png'+v).then(img=>{d[n]={img,w:o.w,h:o.h,y0:o.y0}}))}
   let bands=[],clouds=null;if(V){V.bands.forEach((b,i)=>jobs.push(imgLoad('assets/png/vagues/vague-'+(i+1)+'.png'+v).then(c=>{bands[i]={c,y0px:b.y0,fill:b.fill}})));if(V.clouds)jobs.push(imgLoad('assets/png/vagues/nuages.png'+v).then(c=>{clouds={c,y0px:V.clouds.y0}}))}
-  await Promise.all(jobs);DEC=d;if(V)VAG={w:V.w,h:V.h,bands,clouds};
+  const vl={};if(man.volcan)for(const n of Object.keys(man.volcan.layers)){const o=man.volcan.layers[n];jobs.push(imgLoad('assets/png/decor-volcan/'+n+'.png'+v).then(img=>{vl[n]={img,y0:o.y0}}))}
+  await Promise.all(jobs);DEC=d;if(V)VAG={w:V.w,h:V.h,bands,clouds};if(man.volcan)VOL={w:man.volcan.w,h:man.volcan.h,layers:vl};
+  for(const im of [...Object.values(d).map(o=>o.img),...Object.values(vl).map(o=>o.img),...bands.map(b=>b.c),...(clouds?[clouds.c]:[])])trimCols(im);
   BAKED.ok=true;return true}catch(e){logErr(e);return false}}
+// première apparition d'un texte décoratif ou d'une image = coûteuse sur la borne : on prépare tout pendant le menu
+function warmUp(){const jobs=[];const T=(t,s,c,st,lw)=>jobs.push(()=>txImg(t,s,c,st,lw));
+  for(const [t,c] of [['AÏE !','#ff9a7a'],['OUF !','#ffde59'],['CHECKPOINT !','#efe3c8'],['ÉCHAPPÉ !','#9dff8a'],['SOUFFLE !','#7fe0ff'],['PARFAIT !','#9dff8a'],['ÇA COULE !','#7fe0ff'],['À BOUT DE SOUFFLE','#ff9a7a']])T(t,30,c,'#140b09',7);
+  for(let n=2;n<10;n++)T('SANS FAUTE x'+n,42,'#ffde59','#140b09',7);
+  for(const r of ['Brûlé !','Détrempé !','Chute !','Aspiré !','Coulé !','Chaviré !','Emporté !','Rattrapé par la lave !','Rattrapé par le tsunami !','Rattrapé par la tornade !'])T(r,46,'#e5641e');
+  for(const f of FORMS){T(FLABEL[f].toUpperCase()+' !',38,'#ffde59');T('▼ '+FLABEL[f].toUpperCase(),20,'#ffde59')}
+  T('DÉCHIRÉ !',38,'#e5641e');T('1er !',38,'#efe3c8');T('2e',38,'#efe3c8');
+  for(const b in BIOME)T(BIOME[b].name,40,'#24160f');
+  for(const n of ['3','2','1'])T(n,120,'#efe3c8','#24160f',8);T('GO !',120,'#ffde59','#24160f',8);
+  for(const k of ['ESPACE','ENTRÉE','action'])T('MARTÈLE '+k,18,'#ffde59');T('◀ SECOUE  ',18,'#ffde59');T('  SECOUE ▶',18,'#ffde59');T('RAFALE ! ◀◀',30,'#ffde59');T('!',26,'#ffde59');T('!',30,'#ffde59');
+  // images : un premier dessin force leur décodage
+  const g=document.createElement('canvas').getContext('2d');const imgs=new Set();for(const k in SPR.c){const s=SPR.c[k];imgs.add(s.img||s)}for(const k in OB)imgs.add(OB[k].c);
+  if(DEC)for(const k in DEC)imgs.add(DEC[k].img);if(VOL)for(const k in VOL.layers)imgs.add(VOL.layers[k].img);if(VAG){VAG.bands.forEach(b=>imgs.add(b.c));if(VAG.clouds)imgs.add(VAG.clouds.c)}
+  for(const im of [HEART.img,HEART.empty,HEART.ball])if(im)imgs.add(im);for(const im of imgs)jobs.push(()=>g.drawImage(im,0,0,2,2));
+  // par petits paquets, pour ne pas bloquer le menu
+  const run=()=>{const t0=performance.now();while(jobs.length&&performance.now()-t0<8)jobs.shift()();if(jobs.length)setTimeout(run,0)};run()}
 // ---------- cœurs (vies) ----------
 const HEART={img:null,empty:null,ball:null};
 function makeBall(img){const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d'),R=mulberry(9);
@@ -1113,7 +1147,7 @@ let PANG=null,DANG=null;
 function panicFx(p){if(p.lives!==1||p.state!=='run'||S.infinite)return;const a=.18+.14*Math.max(0,Math.sin(S.t*Math.PI*2*1.6));
   if(Q.lite){ctx.fillStyle='rgba(180,10,0,'+a+')';ctx.fillRect(0,0,W,14);ctx.fillRect(0,VH-14,W,14);ctx.fillRect(0,0,14,VH);ctx.fillRect(W-14,0,14,VH);return}
   if(!PANG){PANG=ctx.createRadialGradient(W/2,VH/2,VH*.4,W/2,VH/2,W*.62);PANG.addColorStop(0,'rgba(180,0,0,0)');PANG.addColorStop(1,'rgba(180,10,0,1)')}ctx.globalAlpha=a;ctx.fillStyle=PANG;ctx.fillRect(0,0,W,VH);ctx.globalAlpha=1}
-function dangerFx(p){if(p.state!=='run')return;const d=p.x-p.tx;if(d>260)return;const a=(1-d/260)*.35;
+function dangerFx(p){if(p.state!=='run')return;const d=p.x-p.tx;if(d>150)return;const a=(1-d/150)*.35;
   if(!DANG){DANG=ctx.createLinearGradient(0,0,320,0);DANG.addColorStop(0,'rgba(255,60,0,1)');DANG.addColorStop(1,'rgba(255,60,0,0)')}ctx.globalAlpha=a;ctx.fillStyle=DANG;ctx.fillRect(0,0,320,VH);ctx.globalAlpha=1}
 function drawTrail(p){if(Q.lite)return;const n=p.trail.length;p.trail.forEach((t,i)=>{ctx.globalAlpha=.07+.12*(i/n);drawForm(p,t.f,t.pose||BASE[t.f],sx(p,t.x),sy(p,t.y)+laneY(t.lane||1),t.r,1,1,false)});ctx.globalAlpha=1}
 function drawFx(p){for(const f of p.fx){const a=clamp(f.l/f.max,0,1);
@@ -1124,10 +1158,11 @@ function drawFx(p){for(const f of p.fx){const a=clamp(f.l/f.max,0,1);
 function speedLines(p){if(Q.lite)return;let s=0;if(p.state==='trans')s=1;else if(p.state==='run'){if(p.form==='renard'&&p.onG&&p.stun<=0&&spanAt(p.x).k==='ground')s=.75;else if(p.form==='avion'&&!p.onG)s=.6}if(!s)return;
   ctx.strokeStyle=`rgba(255,255,255,${.2*s})`;ctx.lineWidth=2;for(let k=0;k<12;k++){const y=10+hash(k,9)*VH*.5,len=80+hash(k,8)*180,x=W+200-((S.t*(1300+hash(k,7)*900)+hash(k,6)*W*2)%(W*2+400));ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+len,y);ctx.stroke()}}
 function drawView(p,oy){ctx.save();ctx.translate(0,oy);ctx.beginPath();ctx.rect(0,0,W,VH);ctx.clip();
-  const panic=p.lives===1&&p.state==='run'&&!S.infinite;const dd=p.x-p.tx,rumble=p.state==='run'&&dd<240?(1-dd/240)*4:0;
+  const panic=p.lives===1&&p.state==='run'&&!S.infinite;const dd=p.x-p.tx,rumble=p.state==='run'&&dd<120?(1-dd/120)*4:0;
   const sh=(p.shake>0?14*p.shake:0)+(panic?2:0)+rumble;
-  ctx.save();if(sh)ctx.translate((Math.random()-.5)*sh,(Math.random()-.5)*sh);ctx.translate(0,p.kick);
-  const z=1+p.punch*.4;if(z>1.001){const px=sx(p,p.x),py=sy(p,p.y+20);ctx.translate(px,py);ctx.scale(z,z);ctx.translate(-px,-py)}
+  // déplacements sur des pixels entiers : un décalage d'une fraction de pixel oblige à ré-échantillonner toute l'image (très lent sans carte graphique)
+  ctx.save();if(sh)ctx.translate(Math.round((Math.random()-.5)*sh),Math.round((Math.random()-.5)*sh));ctx.translate(0,Math.round(p.kick));
+  const z=Q.lite?1:1+p.punch*.4;if(z>1.001){const px=sx(p,p.x),py=sy(p,p.y+20);ctx.translate(px,py);ctx.scale(z,z);ctx.translate(-px,-py)}
   const P=window.__PROF,T=P?(n=>{ctx.getImageData(0,0,1,1);const t=performance.now();P[n]=(P[n]||0)+t-P._t;P._t=t}):()=>{};if(P){ctx.getImageData(0,0,1,1);P._t=performance.now()}
   const K=window.__SKIP||{};
   if(!K.fond)background(p);T('fond');if(!K.ambiance)ambient(p);T('ambiance');if(!K.sol)drawSpans(p);T('sol');drawFlags(p);if(!K.epreuve)drawMGs(p,'back');T('épreuve arrière');drawTrail(p);T('traînée');if(!K.perso)drawPlayer(p);T('perso');if(!K.epreuve)drawMGs(p,'front');drawDecorFront(p);T('épreuve avant');drawParts(p);T('particules');if(!K.menace)drawThreat(p);T('menace');drawFx(p);T('textes');
@@ -1260,11 +1295,11 @@ $('btnClear').onclick=()=>{if($('btnClear').dataset.armed){saveScores([]);$('sco
 // le bouton de départ attend que les visuels soient prêts (pas de décor manquant en début de partie)
 $('btnStart').disabled=true;$('btnStart').textContent='Chargement…';
 const ready=()=>{if(READY)return;READY=true;$('btnStart').disabled=false;$('btnStart').textContent='Lancer la course'};
-loadHeart();loadBaked().then(ok=>{if(!ok){loadSprites();loadObstacles();loadVaguesSVG()}ready()});setTimeout(ready,8000);
+loadHeart();loadBaked().then(ok=>{if(!ok){loadSprites();loadObstacles();loadVaguesSVG()}ready();const w=()=>warmUp();(document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(()=>setTimeout(w,50))});setTimeout(ready,8000);
 $('optQ').value=Q.mode;applyQ(Q.mode==='econome'?2:0);$('optQ').onchange=e=>{Q.mode=e.target.value;LS.set('origami-q',Q.mode);applyQ(Q.mode==='econome'?2:0)};
 setMute(AU.muted);toggleDA(LS.get('origami-da')==='1');
 S.players=[makePlayer(0,false),makePlayer(1,true)];
-window.__origami={Q,get VAG(){return VAG},get DEC(){return DEC},HEART,S,get C(){return C},MGDEF,makePlayer,updPlayer,start,showResults,render:()=>{drawView(S.players[0],0);progressBand();drawView(S.players[1],VH+BAND)}};
+window.__origami={get VOL(){return VOL},TXC,Q,get VAG(){return VAG},get DEC(){return DEC},HEART,S,get C(){return C},MGDEF,makePlayer,updPlayer,start,showResults,render:()=>{drawView(S.players[0],0);progressBand();drawView(S.players[1],VH+BAND)}};
 requestAnimationFrame(frame);
 })();
 </script>

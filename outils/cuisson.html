@@ -32,12 +32,13 @@ async function cuire(){
   // 1. origamis : une seule planche (125 × 106 px par sprite, contour compris)
   const jobs=[];for(const sk of SKINS)for(const f of FORMS){POSES[f].forEach(n=>jobs.push([sk,f,'pose',n]));DEGATS.forEach(n=>jobs.push([sk,f,'deg',n]));if(f==='bateau')CALQUES.forEach(n=>jobs.push([sk,f,'cal',n]))}
   const atlas=mk(COLS*CW,Math.ceil(jobs.length/COLS)*CH),ag=atlas.getContext('2d');ag.imageSmoothingQuality='high';
-  for(let i=0;i<jobs.length;i++){const [sk,f,k,n]=jobs[i];const im=await load(sprURL(sk,f,k,n));const big=withOutline(im,400,340,(k!=='cal'||n==='1_bateau')?7:0,.9);
-    const x=(i%COLS)*CW,y=Math.floor(i/COLS)*CH;ag.drawImage(big,x,y,CW,CH);man.sprites.items[sk+'/'+f+'/'+k+'/'+n]=[x,y]}
+  // dessinés directement à leur taille finale : le grain du papier (filtre SVG) reste visible au lieu d'être lissé par une réduction
+  for(let i=0;i<jobs.length;i++){const [sk,f,k,n]=jobs[i];const im=await load(sprURL(sk,f,k,n));const sm=withOutline(im,CW,CH,(k!=='cal'||n==='1_bateau')?1.8:0,.7);
+    const x=(i%COLS)*CW,y=Math.floor(i/COLS)*CH;ag.drawImage(sm,x,y);man.sprites.items[sk+'/'+f+'/'+k+'/'+n]=[x,y]}
   await save('sprites.png',atlas);log('origamis : '+jobs.length+' sprites');
   // 2. obstacles (moitié de la taille du SVG, sauf rafales et tornade gardées en grand)
-  for(const g in OBS_FILES)for(const n of OBS_FILES[g]){const im=await load('../assets/obstacles/'+g+'/'+n+'.svg');const w=im.naturalWidth,h=im.naturalHeight;
-    const c=withOutline(im,w,h,/^(rafales|anneau)/.test(n)?0:5,.85),f=/^(rafales|tornade)/.test(n)?1:.5,s=shrink(c,f),bb=bbox(s);
+  for(const g in OBS_FILES)for(const n of OBS_FILES[g]){const im=await load('../assets/obstacles/'+g+'/'+n+'.svg');const f=/^(rafales|tornade)/.test(n)?1:.5,w=im.naturalWidth*f,h=im.naturalHeight*f;
+    const s=withOutline(im,w,h,/^(rafales|anneau)/.test(n)?0:2.5,.8),bb=bbox(s);
     await save('obstacles/'+n+'.png',s);man.obstacles[n]={w:s.width,h:s.height,bb}}
   log('obstacles : '+Object.keys(man.obstacles).length);
   // 3. décor de la tornade : chaque calque à l'échelle du jeu, recadré sur ce qui est dessiné
@@ -53,6 +54,8 @@ async function cuire(){
   for(let i=0;i<V.bands.length;i++){const b=V.bands[i],r=plane([b],'rgba(6,22,46,.5)');await save('vagues/vague-'+(i+1)+'.png',r.c);man.vagues.bands.push({fill:b.fill,y0:r.y0,h:r.c.height})}
   if(V.clouds&&V.clouds.length){const r=plane(V.clouds,'rgba(10,26,34,.45)');await save('vagues/nuages.png',r.c);man.vagues.clouds={y0:r.y0,h:r.c.height}}
   log('vagues : '+V.bands.length+' plans'+(man.vagues.clouds?' + nuages':''));
+  // décor du volcan : découpé à part depuis volcan.ai (5 calques déjà en PNG dans decor-volcan/), on le reprend tel quel
+  const vol=await fetch('../assets/png/decor-volcan/volcan.json').then(r=>r.ok?r.json():null).catch(()=>null);if(vol){man.volcan=vol;log('décor volcan : '+Object.keys(vol.layers).length+' calques repris')}
   await save('manifest.json',JSON.stringify(man));log('Terminé en '+((performance.now()-t0)/1000).toFixed(1)+' s. Pense à commiter assets/png/.');
   window.CUIT=man}
 document.getElementById('go').onclick=()=>cuire().catch(e=>{log('ERREUR : '+e.message);window.CUIT_ERR=String(e)});
